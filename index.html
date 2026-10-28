@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Anatoli Valev — Python Developer</title>
+  <meta name="description" content="Anatoli Valev — Python & backend developer, SoftUni student. FastAPI, PostgreSQL, Docker, web scraping, automation and desktop apps." />
+  <meta property="og:title" content="Anatoli Valev — Python Developer" />
+  <meta property="og:description" content="FastAPI, PostgreSQL, Docker, web scraping, automation and desktop apps." />
+  <meta property="og:image" content="assets/img/aquarium.webp" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script>
+    // Apply saved language/theme before paint to avoid a flash.
+    (function () {
+      var d = document.documentElement, lang, theme;
+      try { lang = localStorage.getItem("lang"); theme = localStorage.getItem("theme"); } catch (e) {}
+      if (!lang) lang = (navigator.language || "").toLowerCase().indexOf("bg") === 0 ? "bg" : "en";
+      d.lang = lang;
+      if (theme) d.dataset.theme = theme;
+    })();
+  </script>
+</head>
+<body>
+  <a class="skip" href="#main">
+    <span lang="en">Skip to content</span><span lang="bg">Към съдържанието</span>
+  </a>
+
+  <header class="nav" id="top">
+    <div class="wrap nav__inner">
+      <a class="logo" href="#top" aria-label="Anatoli Valev">
+        <span class="logo__mark">AV</span>
+        <span class="logo__name">anatoli<span class="accent">.dev</span></span>
+      </a>
+
+      <nav class="nav__links" id="navLinks" aria-label="Main">
+        <a href="#about"><span lang="en">About</span><span lang="bg">За мен</span></a>
+        <a href="#projects"><span lang="en">Projects</span><span lang="bg">Проекти</span></a>
+        <a href="#skills"><span lang="en">Skills</span><span lang="bg">Умения</span></a>
+        <a href="#education"><span lang="en">Education</span><span lang="bg">Образование</span></a>
+        <a href="#contact"><span lang="en">Contact</span><span lang="bg">Контакт</span></a>
+      </nav>
+
+      <div class="nav__tools">
+        <button class="pill-btn" id="langBtn" type="button" aria-label="Switch language">
+          <span lang="en">BG</span><span lang="bg">EN</span>
+        </button>
+        <button class="icon-btn" id="themeBtn" type="button" aria-label="Toggle theme">
+          <svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8 6 18M18 6l1.8-1.8"/></svg>
+          <svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg>
+        </button>
+        <button class="icon-btn nav__burger" id="menuBtn" type="button" aria-label="Menu" aria-expanded="false" aria-controls="navLinks">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- HERO -->
+    <section class="hero">
+      <div class="wrap hero__grid">
+        <div class="hero__text">
+          <p class="eyebrow"><span class="dot"></span>
+            <span lang="en">Open to freelance projects &amp; internships</span>
+            <span lang="bg">Отворен за фрийланс проекти и стаж</span>
+          </p>
+          <h1>
+            <span lang="en">Hi, I'm Anatoli.<br />I build <em>backends</em>, <em>scrapers</em> &amp; tools that just work.</span>
+            <span lang="bg">Здравей, аз съм Анатоли.<br />Правя <em>бекенди</em>, <em>скрейпъри</em> и инструменти, които просто работят.</span>
+          </h1>
+          <p class="lead">
+            <span lang="en">Python developer and Software Engineering student at SoftUni. I work with FastAPI, PostgreSQL and Docker, automate boring work with scrapers and scripts, and ship desktop apps, websites and even a game.</span>
+            <span lang="bg">Python разработчик и студент по софтуерно инженерство в СофтУни. Работя с FastAPI, PostgreSQL и Docker, автоматизирам скучната работа със скрейпъри и скриптове и пускам десктоп приложения, сайтове и дори игра.</span>
+          </p>
+          <div class="hero__cta">
+            <a class="btn btn--primary" href="#projects"><span lang="en">See my work</span><span lang="bg">Виж проектите</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+            <a class="btn btn--ghost" href="mailto:anatoligvalev@gmail.com"><span lang="en">Get in touch</span><span lang="bg">Свържи се с мен</span></a>
+          </div>
+          <ul class="hero__social" aria-label="Social">
+            <li><a href="https://github.com/agvalev" target="_blank" rel="noopener" aria-label="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.7 5.39-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg></a></li>
+            <li><a href="https://www.linkedin.com/in/anatoli-valev-098829335/" target="_blank" rel="noopener" aria-label="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true" class="fill"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13ZM7.12 20.45H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0Z"/></svg></a></li>
+            <li><a href="https://www.instagram.com/_a.valev_/" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".6" class="fill"/></svg></a></li>
+            <li><a href="mailto:anatoligvalev@gmail.com" aria-label="Email"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/></svg></a></li>
+          </ul>
+        </div>
+
+        <div class="terminal" aria-label="Terminal intro">
+          <div class="terminal__bar">
+            <span></span><span></span><span></span>
+            <p>~/anatoli — zsh</p>
+          </div>
+          <pre class="terminal__body" id="terminal"><code><span class="t-prompt">$</span> whoami
+anatoli_valev  <span class="t-muted"># python · backend</span>
+
+<span class="t-prompt">$</span> cat stack.json
+{
+  <span class="t-key">"api"</span>:  [<span class="t-str">"FastAPI"</span>, <span class="t-str">"Django"</span>],
+  <span class="t-key">"data"</span>: [<span class="t-str">"PostgreSQL"</span>, <span class="t-str">"Docker"</span>],
+  <span class="t-key">"auto"</span>: [<span class="t-str">"scrapers"</span>, <span class="t-str">"Whisper"</span>],
+  <span class="t-key">"also"</span>: [<span class="t-str">"PyQt6"</span>, <span class="t-str">"TS"</span>, <span class="t-str">"MQL5"</span>]
+}
+
+<span class="t-prompt">$</span> make scrape <span class="t-muted">&amp;&amp;</span> make up
+<span class="t-ok">✔</span> fuel prices scraped
+<span class="t-ok">✔</span> api live on :8000<span class="caret"></span></code></pre>
+        </div>
+      </div>
+
+      <div class="wrap stats">
+        <div class="stat"><strong>10+</strong><span lang="en">projects built</span><span lang="bg">изградени проекта</span></div>
+        <div class="stat"><strong>19</strong><span lang="en">years old</span><span lang="bg">години</span></div>
+        <div class="stat"><strong>2021</strong><span lang="en">wrote my first line of code</span><span lang="bg">написах първия си ред код</span></div>
+        <div class="stat"><strong>∞</strong><span lang="en">cups of coffee</span><span lang="bg">чаши кафе</span></div>
+      </div>
+    </section>
+
+    <!-- ABOUT -->
+    <section class="section" id="about">
+      <div class="wrap about">
+        <div class="section__head">
+          <p class="kicker">01 · <span lang="en">About</span><span lang="bg">За мен</span></p>
+          <h2><span lang="en">From coursework to real products</span><span lang="bg">От учебни задачи до реални продукти</span></h2>
+        </div>
+        <div class="about__body">
+          <p>
+            <span lang="en">I started with Python at <strong>SoftUni</strong> — Fundamentals, Advanced and OOP — and quickly moved to building things people can actually use. Today most of my time goes into <strong>backend development and APIs</strong>: services in FastAPI, data in PostgreSQL, everything packaged with Docker and tested in CI.</span>
+            <span lang="bg">Започнах с Python в <strong>СофтУни</strong> — Fundamentals, Advanced и OOP — и бързо преминах към неща, които хората реално могат да ползват. Днес повечето ми време отива в <strong>бекенд разработка и API-та</strong>: услуги с FastAPI, данни в PostgreSQL, всичко пакетирано с Docker и тествано в CI.</span>
+          </p>
+          <p>
+            <span lang="en">I love automation: scrapers that turn a whole catalogue into a clean Excel report, Google Sheets that manage stock on their own, a pipeline that subtitles a video with Whisper. On the side I build desktop apps in PyQt6, websites for local businesses, an idle aquarium game for Steam, and research trading strategies with strict backtesting.</span>
+            <span lang="bg">Обичам автоматизацията: скрейпъри, които превръщат цял каталог в чист Excel отчет, Google таблици, които сами управляват склада, процес, който субтитрира видео с Whisper. Паралелно правя десктоп приложения с PyQt6, сайтове за местен бизнес, idle игра с аквариум за Steam и изследвам търговски стратегии със стриктни бектестове.</span>
+          </p>
+          <p class="muted">
+            <span lang="en">Currently learning: deeper <strong>Django</strong> &amp; <strong>FastAPI</strong>, async Python and system design.</span>
+            <span lang="bg">В момента уча: по-задълбочено <strong>Django</strong> и <strong>FastAPI</strong>, async Python и системен дизайн.</span>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- PROJECTS -->
+    <section class="section" id="projects">
+      <div class="wrap">
+        <div class="section__head section__head--row">
+          <div>
+            <p class="kicker">02 · <span lang="en">Projects</span><span lang="bg">Проекти</span></p>
+            <h2><span lang="en">Selected work</span><span lang="bg">Избрани проекти</span></h2>
+          </div>
+          <div class="filters" role="group" aria-label="Filter projects">
+            <button class="chip is-active" data-filter="all" type="button"><span lang="en">All</span><span lang="bg">Всички</span></button>
+            <button class="chip" data-filter="backend" type="button"><span lang="en">Backend</span><span lang="bg">Бекенд</span></button>
+            <button class="chip" data-filter="automation" type="button"><span lang="en">Automation</span><span lang="bg">Автоматизация</span></button>
+            <button class="chip" data-filter="desktop" type="button"><span lang="en">Desktop</span><span lang="bg">Десктоп</span></button>
+            <button class="chip" data-filter="web" type="button">Web</button>
+            <button class="chip" data-filter="games" type="button"><span lang="en">Games</span><span lang="bg">Игри</span></button>
+          </div>
+        </div>
+
+        <div class="projects">
+          <!-- Fuel API -->
+          <article class="card card--wide" data-tags="backend automation">
+            <div class="card__visual card__visual--code" aria-hidden="true">
+<pre><code><span class="t-muted">GET</span> /api/v1/fuel/latest?country=Germany&amp;currency=EUR
+
+{
+  <span class="t-key">"country"</span>: <span class="t-str">"Germany"</span>,
+  <span class="t-key">"gasoline"</span>: <span class="t-num">1.79</span>,
+  <span class="t-key">"diesel"</span>:   <span class="t-num">1.68</span>,
+  <span class="t-key">"lpg"</span>:      <span class="t-num">1.05</span>,
+  <span class="t-key">"change_7d"</span>: <span class="t-num">-0.4</span>,
+  <span class="t-key">"currency"</span>: <span class="t-str">"EUR"</span>
+}</code></pre>
+            </div>
+            <div class="card__body">
+              <p class="card__type"><span lang="en">Backend · REST API · Team project</span><span lang="bg">Бекенд · REST API · Екипен проект</span></p>
+              <h3>Fuel API Monorepo</h3>
+              <p>
+                <span lang="en">A monorepo that scrapes European fuel prices and serves them through a REST API. Gasoline, diesel and LPG for every country, 13 currencies, 1/7/30-day price changes and duplicate protection.</span>
+                <span lang="bg">Монорепо, което събира цените на горивата в Европа и ги предоставя чрез REST API. Бензин, дизел и газ за всяка държава, 13 валути, промени за 1/7/30 дни и защита от дублиране.</span>
+              </p>
+              <ul class="bullets">
+                <li><span lang="en">FastAPI service with OpenAPI docs + standalone scraper CLI</span><span lang="bg">FastAPI услуга с OpenAPI документация + самостоятелен скрейпър (CLI)</span></li>
+                <li><span lang="en">Shared common package for database and config</span><span lang="bg">Общ пакет за база данни и конфигурация</span></li>
+                <li><span lang="en">Docker Compose + PostgreSQL, CI and a daily scrape cron on GitHub Actions</span><span lang="bg">Docker Compose + PostgreSQL, CI и ежедневно събиране чрез GitHub Actions</span></li>
+                <li><span lang="en">Test suite with 80%+ coverage</span><span lang="bg">Тестове с над 80% покритие</span></li>
+              </ul>
+              <ul class="tags"><li>Python</li><li>FastAPI</li><li>PostgreSQL</li><li>Docker</li><li>GitHub Actions</li><li>BeautifulSoup</li><li>pytest</li></ul>
+              <p class="card__meta"><span class="badge"><span lang="en">Private repo</span><span lang="bg">Частно репо</span></span></p>
+            </div>
+          </article>
+
+          <!-- Aquarium Idle -->
+          <article class="card card--wide card--reverse" data-tags="games">
+            <figure class="card__visual card__visual--img">
+              <img src="assets/img/aquarium.webp" alt="Aquarium Idle — a living aquarium with procedurally drawn fish" loading="lazy" width="1200" height="675" />
+            </figure>
+            <div class="card__body">
+              <p class="card__type"><span lang="en">Game · In development for Steam</span><span lang="bg">Игра · В разработка за Steam</span></p>
+              <h3><span lang="en">Aquarium Idle</span><span lang="bg">Аквариум Idle</span></h3>
+              <p>
+                <span lang="en">A cozy idle game: raise fish, cross-breed rare species and decorate your tank. Every fish carries genes — shape, colour, pattern, fins, size, glow — and is drawn procedurally from them.</span>
+                <span lang="bg">Спокойна idle игра: отглеждаш рибки, кръстосваш редки видове и украсяваш аквариума. Всяка рибка носи гени — форма, цвят, шарка, перки, размер, сияние — и се рисува процедурно по тях.</span>
+              </p>
+              <ul class="bullets">
+                <li><span lang="en">Genetics engine with inheritance, colour mixing and mutations</span><span lang="bg">Генетика с наследяване, смесване на цветове и мутации</span></li>
+                <li><span lang="en">Canvas renderer: water, light rays, sand, bubbles, particles</span><span lang="bg">Canvas рендер: вода, лъчи, пясък, мехурчета, частици</span></li>
+                <li><span lang="en">Economy, breeding, encyclopedia (72+ entries), offline progress</span><span lang="bg">Икономика, развъждане, енциклопедия (72+ записа), офлайн прогрес</span></li>
+              </ul>
+              <ul class="tags"><li>TypeScript</li><li>Canvas 2D</li><li>Vite</li><li><span lang="en">Procedural art</span><span lang="bg">Процедурна графика</span></li></ul>
+            </div>
+          </article>
+
+          <!-- Image watermarker -->
+          <article class="card" data-tags="desktop automation">
+            <div class="card__visual card__visual--ui" aria-hidden="true">
+              <div class="mock">
+                <div class="mock__col"><i></i><i></i><i></i><i></i></div>
+                <div class="mock__preview"><span>© MyShop</span></div>
+                <div class="mock__col mock__col--opts"><b></b><b></b><b></b><em></em></div>
+              </div>
+            </div>
+            <div class="card__body">
+              <p class="card__type"><span lang="en">Desktop app · Product</span><span lang="bg">Десктоп приложение · Продукт</span></p>
+              <h3>Bulk Image Watermarker &amp; Resizer</h3>
+              <p>
+                <span lang="en">Batch resize, watermark, rename and convert hundreds of product photos at once — with a live preview, social-media presets and zero uploads. Shipped as a single Windows .exe for Etsy sellers and photographers.</span>
+                <span lang="bg">Масово оразмеряване, воден знак, преименуване и конвертиране на стотици снимки наведнъж — с преглед на живо, готови размери за социални мрежи и без качване онлайн. Разпространява се като един .exe файл за Etsy продавачи и фотографи.</span>
+              </p>
+              <ul class="tags"><li>Python</li><li>PyQt6</li><li>Pillow</li><li>PyInstaller</li></ul>
+            </div>
+          </article>
+
+          <!-- YouTube MP3 diploma -->
+          <article class="card" data-tags="desktop">
+            <div class="card__visual card__visual--ui card__visual--player" aria-hidden="true">
+              <div class="player">
+                <div class="player__url">youtube.com/watch?v=…</div>
+                <div class="player__row"><span class="player__btn">▶</span><div class="player__bar"><i></i></div><span class="player__time">2:41</span></div>
+                <div class="player__list"><i></i><i></i><i></i></div>
+              </div>
+            </div>
+            <div class="card__body">
+              <p class="card__type"><span lang="en">Desktop app · Diploma project</span><span lang="bg">Десктоп приложение · Дипломен проект</span></p>
+              <h3>YouTube → MP3</h3>
+              <p>
+                <span lang="en">A desktop app for downloading YouTube audio as MP3, with a download manager, progress tracking and a built-in audio player. Bundles yt-dlp and FFmpeg so it runs out of the box.</span>
+                <span lang="bg">Десктоп приложение за сваляне на аудио от YouTube като MP3, с мениджър на изтеглянията, прогрес и вграден аудио плейър. Включва yt-dlp и FFmpeg, за да работи веднага.</span>
+              </p>
+              <ul class="tags"><li>Python</li><li>PyQt6</li><li>yt-dlp</li><li>FFmpeg</li></ul>
+              <p class="card__meta"><a class="link" href="https://github.com/agvalev/youtube-mp3-diploma" target="_blank" rel="noopener">GitHub ↗</a></p>
+            </div>
+          </article>
+
+          <!-- Scraper -->
+          <article class="card" data-tags="automation">
+            <figure class="card__visual card__visual--img">
+              <img src="assets/img/scraper.webp" alt="E-commerce scraper cover: 1,000 products, 50 categories, under 1 minute" loading="lazy" width="1200" height="900" />
+            </figure>
+            <div class="card__body">
+              <p class="card__type"><span lang="en">Automation · Web scraping</span><span lang="bg">Автоматизация · Скрейпване</span></p>
+              <h3><span lang="en">Product Scraper → Excel</span><span lang="bg">Скрейпър на продукти → Excel</span></h3>
+              <p>
+                <span lang="en">Crawls a full online catalogue — 50 categories with pagination — and exports 1,000 products to a formatted Excel report in under a minute. Summary sheet with live formulas, CSV export, retries and polite delays.</span>
+                <span lang="bg">Обхожда цял онлайн каталог — 50 категории със страниране — и изкарва 1000 продукта във форматиран Excel отчет за под минута. Обобщаващ лист с формули, CSV експорт, повторни опити и учтиво забавяне.</span>
+              </p>
+              <ul class="tags"><li>Python</li><li>Requests</li><li>BeautifulSoup</li><li>openpyxl</li></ul>
+            </div>
+          </article>
+
+          <!-- Sheets -->
+          <article class="card" data-tags="automation">
+            <figure class="card__visual card__visual--img">
+              <img src="assets/img/sheets.webp" alt="Google Sheets inventory automation cover" loading="lazy" width="1200" height="900" />
+            </figure>
+            <div class="card__body">
+              <p class="card__type"><span lang="en">Automation · Google Workspace</span><span lang="bg">Автоматизация · Google Workspace</span></p>
+              <h3><span lang="en">Inventory &amp; Reorder Automation</span><span lang="bg">Склад и автоматични поръчки</span></h3>
+              <p>
+                <span lang="en">Turns a plain Google Sheet into a small inventory system: custom menu, sales applied to stock, reorder lists grouped by supplier, a dashboard and a daily low-stock email. Business logic covered by tests.</span>
+                <span lang="bg">Превръща обикновена Google таблица в малка складова система: собствено меню, продажбите се отчитат от наличността, списъци за поръчка по доставчик, табло и ежедневен имейл за ниски наличности. Логиката е покрита с тестове.</span>
+              </p>
+              <ul class="tags"><li>Apps Script</li><li>JavaScript</li><li>Google Sheets</li></ul>
+            </div>
+          </article>
+
+          <!-- Subtitles -->
+          <article class="card" data-tags="automation">
+            <figure class="card__visual card__visual--img">
+              <img src="assets/img/subtitles.webp" alt="Automatic subtitles and vertical video cover" loading="lazy" width="1200" height="900" />
+            </figure>
+            <div class="card__body">
+              <p class="card__type"><span lang="en">Automation · AI · Video</span><span lang="bg">Автоматизация · AI · Видео</span></p>
+              <h3><span lang="en">Auto Subtitles + 9:16 Video</span><span lang="bg">Автоматични субтитри + 9:16 видео</span></h3>
+              <p>
+                <span lang="en">A pipeline that transcribes speech with Whisper (90+ languages, incl. Bulgarian), creates short word-timed captions and an .SRT file, burns them in, and renders a vertical version for Reels, TikTok and Shorts.</span>
+                <span lang="bg">Процес, който разпознава говор с Whisper (90+ езика, вкл. български), създава кратки субтитри с точно време и .SRT файл, вгражда ги във видеото и прави вертикална версия за Reels, TikTok и Shorts.</span>
+              </p>
+              <ul class="tags"><li>Python</li><li>faster-whisper</li><li>FFmpeg</li></ul>
+            </div>
+          </article>
+
+          <!-- R-Dent -->
+          <article class="card" data-tags="web">
+            <div class="card__visual card__visual--site card__visual--dent" aria-hidden="true">
+              <div class="site">
+                <div class="site__nav"><b>R-Dent</b><i></i><i></i><i></i></div>
+                <div class="site__hero"><strong>Премиум дентална грижа</strong><span></span></div>
+                <div class="site__cards"><i></i><i></i><i></i></div>
+              </div>
+            </div>
+            <div class="card__body">
+              <p class="card__type"><span lang="en">Website · Client</span><span lang="bg">Уебсайт · Клиент</span></p>
+              <h3><span lang="en">R-Dent Dental Clinic</span><span lang="bg">R-Dent дентална клиника</span></h3>
+              <p>
+                <span lang="en">A multi-page website for a modern dental clinic in Ruse: services, team, gallery, patient info and contacts. Responsive, fast and written in plain HTML, CSS and JavaScript.</span>
+                <span lang="bg">Многостраничен сайт за модерна дентална клиника в Русе: услуги, екип, галерия, информация за пациенти и контакти. Адаптивен, бърз и написан на чист HTML, CSS и JavaScript.</span>
+              </p>
+              <ul class="tags"><li>HTML</li><li>CSS</li><li>JavaScript</li><li><span lang="en">Responsive</span><span lang="bg">Адаптивен</span></li></ul>
+              <p class="card__meta"><a class="link" href="https://github.com/agvalev/R-Dent" target="_blank" rel="noopener">GitHub ↗</a></p>
+            </div>
+          </article>
+
+          <!-- Corona -->
+          <article class="card" data-tags="web">
+            <div class="card__visual card__visual--site card__visual--corona" aria-hidden="true">
+              <div class="corona">
+                <span class="corona__crown">♛</span>
+                <strong>CORONA</strong>
+                <em>Private Billiard Club</em>
+                <div class="corona__table"><i></i><i></i><i></i></div>
+              </div>
+            </div>
+            <div class="card__body">
+              <p class="card__type"><span lang="en">Website · Concept</span><span lang="bg">Уебсайт · Концепция</span></p>
+              <h3>CORONA Billiard Club</h3>
+              <p>
+                <span lang="en">A cinematic marketing site for a private billiard club: smooth scrolling, staggered reveals, magnetic buttons and custom canvas engines for the hero atmosphere and an interactive table — built for a 95+ Lighthouse budget.</span>
+                <span lang="bg">Кинематографичен сайт за частен билярд клуб: плавен скрол, анимирани появявания, „магнитни“ бутони и собствени canvas двигатели за атмосферата и интерактивна маса — с цел 95+ в Lighthouse.</span>
+              </p>
+              <ul class="tags"><li>Next.js 15</li><li>React 19</li><li>Tailwind</li><li>Framer Motion</li><li>Canvas</li></ul>
+            </div>
+          </article>
+
+          <!-- Trading research -->
+          <article class="card" data-tags="automation">
+            <div class="card__visual card__visual--chart" aria-hidden="true">
+              <svg viewBox="0 0 320 160" preserveAspectRatio="none">
+                <g class="candles">
+                  <path d="M20 90v40M44 70v45M68 80v40M92 55v45M116 65v35M140 40v45M164 50v40M188 30v45M212 45v35M236 25v40M260 35v35M284 15v40"/>
+                </g>
+                <g class="bodies">
+                  <rect x="15" y="100" width="10" height="22"/><rect x="39" y="80" width="10" height="25"/><rect class="dn" x="63" y="88" width="10" height="20"/><rect x="87" y="62" width="10" height="28"/><rect class="dn" x="111" y="72" width="10" height="18"/><rect x="135" y="48" width="10" height="28"/><rect class="dn" x="159" y="58" width="10" height="20"/><rect x="183" y="38" width="10" height="28"/><rect class="dn" x="207" y="52" width="10" height="18"/><rect x="231" y="32" width="10" height="24"/><rect class="dn" x="255" y="42" width="10" height="18"/><rect x="279" y="22" width="10" height="24"/>
+                </g>
+                <path class="ema" d="M10 120 C 80 100, 140 70, 310 30"/>
+              </svg>
+            </div>
+            <div class="card__body">
+              <p class="card__type"><span lang="en">Research · Algo trading · Team project</span><span lang="bg">Изследване · Алго търговия · Екипен проект</span></p>
+              <h3><span lang="en">XAUUSD Strategy Research</span><span lang="bg">Изследване на стратегии за злато</span></h3>
+              <p>
+                <span lang="en">MetaTrader 5 Expert Advisors for gold: session sweep-reversal, momentum + FVG, Donchian trend breakout and a DCA basket bot. Rules are frozen in writing before testing, every rejected candidate is documented, and Python tools run full-grid optimisations.</span>
+                <span lang="bg">MetaTrader 5 експертни съветници за злато: sweep-reversal по сесии, момент + FVG, Donchian пробив и DCA бот. Правилата се фиксират писмено преди теста, всеки отхвърлен вариант е документиран, а Python инструменти пускат пълни оптимизации.</span>
+              </p>
+              <ul class="tags"><li>MQL5</li><li>Python</li><li><span lang="en">Backtesting</span><span lang="bg">Бектестове</span></li><li><span lang="en">Risk management</span><span lang="bg">Управление на риска</span></li></ul>
+              <p class="card__meta"><span class="badge"><span lang="en">Private repo</span><span lang="bg">Частно репо</span></span></p>
+            </div>
+          </article>
+        </div>
+
+        <p class="projects__more">
+          <span lang="en">More on</span><span lang="bg">Още в</span>
+          <a class="link" href="https://github.com/agvalev?tab=repositories" target="_blank" rel="noopener">github.com/agvalev ↗</a>
+        </p>
+      </div>
+    </section>
+
+    <!-- SKILLS -->
+    <section class="section" id="skills">
+      <div class="wrap">
+        <div class="section__head">
+          <p class="kicker">03 · <span lang="en">Skills</span><span lang="bg">Умения</span></p>
+          <h2><span lang="en">Tools I reach for</span><span lang="bg">Инструментите, които ползвам</span></h2>
+        </div>
+        <div class="skills">
+          <div class="skill">
+            <div class="skill__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="19" cy="18" r="2"/></svg></div>
+            <h3><span lang="en">Backend &amp; APIs</span><span lang="bg">Бекенд и API</span></h3>
+            <ul class="tags"><li>Python</li><li>FastAPI</li><li>Django</li><li>REST</li><li>Uvicorn / Gunicorn</li><li>pytest</li></ul>
+          </div>
+          <div class="skill">
+            <div class="skill__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg></div>
+            <h3><span lang="en">Data &amp; DevOps</span><span lang="bg">Данни и DevOps</span></h3>
+            <ul class="tags"><li>PostgreSQL</li><li>Docker</li><li>Docker Compose</li><li>GitHub Actions</li><li>Linux</li><li>Git</li></ul>
+          </div>
+          <div class="skill">
+            <div class="skill__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/><circle cx="12" cy="12" r="3"/></svg></div>
+            <h3><span lang="en">Automation</span><span lang="bg">Автоматизация</span></h3>
+            <ul class="tags"><li>Web scraping</li><li>BeautifulSoup</li><li>openpyxl / Excel</li><li>Apps Script</li><li>Whisper AI</li><li>FFmpeg</li></ul>
+          </div>
+          <div class="skill">
+            <div class="skill__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+            <h3><span lang="en">Frontend &amp; Desktop</span><span lang="bg">Фронтенд и десктоп</span></h3>
+            <ul class="tags"><li>HTML / CSS</li><li>JavaScript</li><li>TypeScript</li><li>Bootstrap</li><li>Tailwind</li><li>Next.js</li><li>PyQt6</li></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- EDUCATION -->
+    <section class="section" id="education">
+      <div class="wrap">
+        <div class="section__head">
+          <p class="kicker">04 · <span lang="en">Education</span><span lang="bg">Образование</span></p>
+          <h2><span lang="en">Learning path</span><span lang="bg">Пътят ми досега</span></h2>
+        </div>
+        <ol class="timeline">
+          <li>
+            <span class="timeline__when"><span lang="en">Now</span><span lang="bg">Сега</span></span>
+            <div>
+              <h3><span lang="en">Python Web — FastAPI &amp; Django</span><span lang="bg">Python Web — FastAPI и Django</span></h3>
+              <p><span lang="en">SoftUni · building production-style APIs, auth, databases and deployment.</span><span lang="bg">СофтУни · API-та в production стил, автентикация, бази данни и деплой.</span></p>
+            </div>
+          </li>
+          <li>
+            <span class="timeline__when">2024</span>
+            <div>
+              <h3>Python OOP</h3>
+              <p><span lang="en">SoftUni · classes, inheritance, polymorphism, design patterns, unit testing.</span><span lang="bg">СофтУни · класове, наследяване, полиморфизъм, шаблони за дизайн, unit тестове.</span></p>
+              <a class="link" href="https://github.com/agvalev/SoftuniPythonOOP2024" target="_blank" rel="noopener">GitHub ↗</a>
+            </div>
+          </li>
+          <li>
+            <span class="timeline__when">2024</span>
+            <div>
+              <h3>Python Advanced</h3>
+              <p><span lang="en">SoftUni · stacks, queues, multidimensional lists, comprehensions, functions, file handling.</span><span lang="bg">СофтУни · стекове, опашки, многомерни списъци, comprehensions, функции, работа с файлове.</span></p>
+              <a class="link" href="https://github.com/agvalev/SoftuniPythonAdvanced2024" target="_blank" rel="noopener">GitHub ↗</a>
+            </div>
+          </li>
+          <li>
+            <span class="timeline__when">2024</span>
+            <div>
+              <h3>Programming Fundamentals with Python</h3>
+              <p><span lang="en">SoftUni · data types, lists, dictionaries, text processing, regular expressions.</span><span lang="bg">СофтУни · типове данни, списъци, речници, обработка на текст, регулярни изрази.</span></p>
+              <a class="link" href="https://github.com/agvalev/SoftuniFundamentals2024" target="_blank" rel="noopener">GitHub ↗</a>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section class="section contact" id="contact">
+      <div class="wrap contact__box">
+        <p class="kicker">05 · <span lang="en">Contact</span><span lang="bg">Контакт</span></p>
+        <h2><span lang="en">Have a project in mind?</span><span lang="bg">Имаш идея за проект?</span></h2>
+        <p class="lead">
+          <span lang="en">An API, a scraper, an automation or a website — write to me and I'll get back to you within a day.</span>
+          <span lang="bg">API, скрейпър, автоматизация или сайт — пиши ми и ще ти отговоря до един ден.</span>
+        </p>
+        <div class="contact__mail">
+          <a class="btn btn--primary btn--lg" href="mailto:anatoligvalev@gmail.com">anatoligvalev@gmail.com</a>
+          <button class="btn btn--ghost" id="copyBtn" type="button" data-email="anatoligvalev@gmail.com">
+            <span class="copy-label"><span lang="en">Copy</span><span lang="bg">Копирай</span></span>
+            <span class="copy-done"><span lang="en">Copied ✓</span><span lang="bg">Копирано ✓</span></span>
+          </button>
+        </div>
+        <ul class="contact__links">
+          <li><a href="https://github.com/agvalev" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="https://www.linkedin.com/in/anatoli-valev-098829335/" target="_blank" rel="noopener">LinkedIn</a></li>
+          <li><a href="https://www.instagram.com/_a.valev_/" target="_blank" rel="noopener">Instagram</a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer__inner">
+      <p>© <span id="year">2026</span> Anatoli Valev</p>
+      <a href="#top" class="link"><span lang="en">Back to top ↑</span><span lang="bg">Нагоре ↑</span></a>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
