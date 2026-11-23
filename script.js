@@ -953,6 +953,33 @@
   }
   placeCases();
 
+  // ---------- HUD: current chapter + scroll position in the corners ----------
+  var hud = (function () {
+    var el = document.getElementById("hud");
+    if (!el) return null;
+    var CH = [["#seq", "Intro", "Начало"], ["#tunnel", "Through the code", "През кода"], ["#about", "Manifesto", "Манифест"],
+      ["#inside", "What's inside", "Отвътре"], [".services", "Services", "Услуги"], ["#work", "Selected work", "Проекти"],
+      ["#sites", "Websites", "Сайтове"], ["#stack", "Stack", "Технологии"], [".principles", "Principles", "Принципи"],
+      [".edu", "Education", "Образование"], ["#contact", "Contact", "Контакт"]];
+    var list = [];
+    CH.forEach(function (c) { var n = document.querySelector(c[0]); if (n) list.push({ el: n, en: c[1], bg: c[2] }); });
+    var idx = document.getElementById("hudIdx"), name = document.getElementById("hudName"), pct = document.getElementById("hudPct");
+    var cur = -1, lastPct = -1;
+    setTimeout(function () { el.classList.add("is-on"); }, 600);
+    return function (y, vh, max) {
+      var a = 0;
+      for (var k = 0; k < list.length; k++) if (list[k].el.getBoundingClientRect().top <= vh * .5) a = k;
+      if (a !== cur) {
+        cur = a;
+        idx.textContent = String(a + 1).padStart(2, "0");
+        name.innerHTML = '<span lang="en">' + list[a].en + '</span><span lang="bg">' + list[a].bg + "</span>";
+        name.classList.remove("is-swap"); void name.offsetWidth; name.classList.add("is-swap");
+      }
+      var pc = max > 0 ? Math.round(y / max * 100) : 0;
+      if (pc !== lastPct) { lastPct = pc; pct.textContent = String(pc).padStart(3, "0"); }
+    };
+  })();
+
   // ---------- One loop for everything scroll/pointer-linked ----------
   var progressBar = document.getElementById("progress");
   var mwords = manifesto.querySelectorAll(".mw");
@@ -968,6 +995,7 @@
 
     var max = document.documentElement.scrollHeight - vh;
     progressBar.style.transform = "scaleX(" + (max > 0 ? y / max : 0) + ")";
+    if (hud && y !== hud.y) { hud.y = y; hud(y, vh, max); }
 
     // nav: glass after the top, hides while scrolling down, returns on scroll up
     nav.classList.toggle("is-scrolled", y > 20);
