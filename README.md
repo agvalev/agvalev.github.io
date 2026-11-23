@@ -17,14 +17,17 @@ Open http://localhost:5500
 |------|------|
 | `index.html` | All content. Every text exists twice: `<span lang="en">` and `<span lang="bg">`. |
 | `styles.css` | Design tokens (colours on `:root`), layout, responsive rules |
-| `motion.css` | Preloader, custom cursor, grain, 3D laptop intro, split-text reveals, marquee |
-| `script.js` | Preloader, smooth scroll, laptop sequence, manifesto, stacking case studies, cursor preview, reveals, clock |
-| `assets/img/` | Project screenshots (WebP) |
+| `motion.css` | Preloader, grain, 3D laptop intro, websites showcase (MacBook + iPhone), split-text reveals, marquee |
+| `script.js` | Preloader, smooth scroll, laptop sequence, manifesto, case studies, trading chart, websites showcase, reveals, clock |
+| `assets/img/` | App screenshot (WebP) |
+| `assets/sites/` | Full-page screenshots of each website: `<name>-d.webp` (desktop, 1200px) and `<name>-m.webp` (mobile, 520px) |
+| `assets/og.jpg` | Share image (1200×630) |
 
 ## Add a project
 
 - Featured: copy one `<article class="case">` block in `index.html` (they stack while scrolling).
-- Smaller: copy one `<li>` in `#rows`; `data-preview` points to the id of the image shown next to the cursor.
+- Website: add a `<button data-i>` to `#siteList`, a matching `.sd` detail block, and one `.shot` image in both
+  the laptop and the phone `.shots` (same order). Add its glow colour to `glows` in `script.js`.
 
 ## Publish on GitHub Pages
 

@@ -17,7 +17,7 @@
   // ---------- Smooth scroll (Lenis, if it loaded) ----------
   var lenis = null;
   if (window.Lenis && !reduceMotion) {
-    lenis = new window.Lenis({ lerp: 0.09, smoothWheel: true, wheelMultiplier: 1 });
+    lenis = new window.Lenis({ lerp: 0.075, smoothWheel: true, wheelMultiplier: 0.95 });
   }
   function scrollToTarget(target) {
     if (lenis) lenis.scrollTo(target, { offset: 0, duration: 1.6 });
@@ -82,6 +82,22 @@
     setMenu(!navLinks.classList.contains("is-open"));
   });
 
+  // ---------- Laptop keyboards (flex-grow per key) ----------
+  var KEY_ROWS = [
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1.6],
+    [1.6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1.9, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1.9],
+    [2.4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2.4],
+    [1, 1, 1, 1.3, 5.6, 1.3, 1, 3]
+  ];
+  each(".kbd", function (kbd) {
+    kbd.innerHTML = KEY_ROWS.map(function (keys, i) {
+      return '<div class="kbd__row' + (i === 0 ? " kbd__row--fn" : "") + '">' +
+        keys.map(function (g) { return '<span style="flex-grow:' + g + '"></span>'; }).join("") + "</div>";
+    }).join("");
+  });
+
   // ---------- Laptop scroll sequence ----------
   var seq = (function () {
     var sec = document.getElementById("seq");
@@ -103,20 +119,6 @@
     var caps = Array.prototype.map.call(sec.querySelectorAll(".seq__cap"), function (el) {
       return { el: el, from: parseFloat(el.dataset.from), to: parseFloat(el.dataset.to) };
     });
-
-    // Keyboard keys (flex-grow per key)
-    var rows = [
-      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1.6],
-      [1.6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-      [1.9, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1.9],
-      [2.4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2.4],
-      [1, 1, 1, 1.3, 5.6, 1.3, 1, 3]
-    ];
-    document.getElementById("kbd").innerHTML = rows.map(function (keys, i) {
-      return '<div class="kbd__row' + (i === 0 ? " kbd__row--fn" : "") + '">' +
-        keys.map(function (g) { return '<span style="flex-grow:' + g + '"></span>'; }).join("") + "</div>";
-    }).join("");
 
     // Split the name into letters that fly apart
     var name = sec.querySelector(".seq__name");
@@ -357,29 +359,8 @@
     });
   }
 
-  // ---------- Pointer effects ----------
-  var cursor = document.getElementById("cursor");
-  var cursorDot = document.getElementById("cursorDot");
-  var cursorLabel = document.getElementById("cursorLabel");
-  var mouse = { x: innerWidth / 2, y: innerHeight / 2 }, ring = { x: mouse.x, y: mouse.y };
-
+  // ---------- Pointer effects: magnetic buttons, bento glow ----------
   if (finePointer && !reduceMotion) {
-    root.classList.add("has-cursor");
-    window.addEventListener("pointermove", function (e) {
-      mouse.x = e.clientX;
-      mouse.y = e.clientY;
-      cursorDot.style.transform = "translate3d(" + mouse.x + "px," + mouse.y + "px,0)";
-      cursor.classList.remove("is-hidden");
-    });
-    document.addEventListener("pointerleave", function () { cursor.classList.add("is-hidden"); });
-    document.addEventListener("pointerover", function (e) {
-      var labelled = e.target.closest("[data-cursor]");
-      var link = e.target.closest("a, button, .svc__row");
-      cursor.classList.toggle("is-label", !!labelled);
-      cursor.classList.toggle("is-link", !labelled && !!link);
-      if (labelled) cursorLabel.textContent = labelled.dataset.cursor;
-    });
-
     each(".magnetic", function (el) {
       el.addEventListener("pointermove", function (e) {
         var r = el.getBoundingClientRect();
@@ -400,25 +381,133 @@
     });
   }
 
-  // Index list: floating preview that follows the cursor
-  var preview = document.getElementById("preview");
-  var pv = { x: 0, y: 0, on: false, active: null, rot: 0 };
-  if (finePointer && !reduceMotion) {
-    each(".row", function (row) {
-      row.addEventListener("pointerenter", function () {
-        if (pv.active) pv.active.classList.remove("is-on");
-        pv.active = document.getElementById(row.dataset.preview);
-        if (pv.active) pv.active.classList.add("is-on");
-        if (!pv.on) { pv.x = mouse.x; pv.y = mouse.y; }
-        pv.on = true;
-        preview.classList.add("is-on");
+  // ---------- Trading chart: range, sweep below it, then the rally (drawn once) ----------
+  (function () {
+    var svg = document.getElementById("candles");
+    if (!svg) return;
+    var plot = svg.parentNode;
+    var seed = 11;
+    function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+    var N = 64, W = 600, H = 300, price = 4012, bars = [];
+    for (var i = 0; i < N; i++) {
+      var drift = i < 18 ? 0 : i < 27 ? -1.3 : i < 31 ? -2.4 : 1.7;
+      var o = price, c = o + drift + (rnd() - .5) * 4.4;
+      bars.push({ o: o, c: c, h: Math.max(o, c) + rnd() * 2.4, l: Math.min(o, c) - rnd() * 2.4 });
+      price = c;
+    }
+    var hi = -Infinity, lo = Infinity;
+    bars.forEach(function (b) { hi = Math.max(hi, b.h); lo = Math.min(lo, b.l); });
+    hi += 6; lo -= 8;
+    function y(p) { return (hi - p) / (hi - lo) * H; }
+    var bw = W / N, out = "";
+
+    for (var g = 1; g < 6; g++) out += '<line class="g" x1="0" x2="' + W + '" y1="' + g * H / 6 + '" y2="' + g * H / 6 + '"/>';
+    for (g = 1; g < 8; g++) out += '<line class="g" y1="0" y2="' + H + '" x1="' + g * W / 8 + '" x2="' + g * W / 8 + '"/>';
+
+    // NY 09:00-10:00 range, then the lowest wick after it is the sweep
+    var rHi = -Infinity, rLo = Infinity, sweep = 18;
+    for (i = 4; i < 18; i++) { rHi = Math.max(rHi, bars[i].h); rLo = Math.min(rLo, bars[i].l); }
+    for (i = 18; i < 40; i++) if (bars[i].l < bars[sweep].l) sweep = i;
+    out += '<rect class="range" x="' + 4 * bw + '" y="' + y(rHi) + '" width="' + 14 * bw + '" height="' + (y(rLo) - y(rHi)) + '"/>';
+
+    bars.forEach(function (b, k) {
+      var cls = b.c >= b.o ? "up" : "dn", x = k * bw + bw / 2;
+      out += '<line class="wick ' + cls + '" x1="' + x + '" x2="' + x + '" y1="' + y(b.h) + '" y2="' + y(b.l) + '"/>';
+      out += '<rect class="' + cls + '" x="' + (k * bw + bw * .18) + '" width="' + bw * .64 + '" y="' + y(Math.max(b.o, b.c)) +
+        '" height="' + Math.max(1, Math.abs(y(b.o) - y(b.c))) + '"/>';
+    });
+
+    var entry = bars[sweep + 2].c, sl = bars[sweep].l - 1.5, tp = entry + (entry - sl) * 2.2;
+    [["entry", entry, "ENTRY", "#e3c48a"], ["sl", sl, "SL", "#ff5d73"], ["tp", tp, "TP", "#3ddc97"]].forEach(function (L) {
+      out += '<line class="lvl ' + L[0] + '" x1="' + (sweep + 2) * bw + '" x2="' + W + '" y1="' + y(L[1]) + '" y2="' + y(L[1]) + '"/>';
+      var tag = document.createElement("span");
+      tag.className = "mt5__tag";
+      tag.style.cssText = "right:6px;top:" + y(L[1]) / H * 100 + "%;background:" + L[3];
+      tag.textContent = L[2] + " " + L[1].toFixed(2);
+      plot.appendChild(tag);
+    });
+    svg.innerHTML = out;
+
+    var note = document.createElement("span");
+    note.className = "mt5__note";
+    note.style.cssText = "left:" + 4 / N * 100 + "%;top:" + (y(rHi) / H * 100 - 7) + "%";
+    note.textContent = "NY 09:00–10:00";
+    plot.appendChild(note);
+    var sw = document.createElement("span");
+    sw.className = "mt5__note mt5__note--sweep";
+    sw.style.cssText = "left:" + (sweep + .5) / N * 100 + "%;top:" + (y(bars[sweep].l) / H * 100 + 3) + "%";
+    sw.textContent = "▲ sweep";
+    plot.appendChild(sw);
+
+    var last = bars[N - 1];
+    document.getElementById("ohlc").textContent = "O " + last.o.toFixed(2) + "  H " + last.h.toFixed(2) +
+      "  L " + last.l.toFixed(2) + "  C " + last.c.toFixed(2);
+  })();
+
+  // ---------- Websites showcase: MacBook + iPhone ----------
+  var sites = (function () {
+    var track = document.getElementById("sitesTrack");
+    if (!track) return null;
+    var buttons = track.querySelectorAll("#siteList button");
+    var details = track.querySelectorAll(".sd");
+    var laptopShots = track.querySelectorAll('[data-device="laptop"] .shot');
+    var phoneShots = track.querySelectorAll('[data-device="phone"] .shot');
+    var num = document.getElementById("siteNum");
+    var count = track.querySelector(".sites__count");
+    var stageWrap = document.getElementById("sitesStage");
+    var laptop = document.getElementById("laptop2");
+    var phone = document.getElementById("phone");
+    var glows = ["rgba(196, 255, 64, .2)", "rgba(216, 183, 122, .3)", "rgba(255, 98, 40, .24)",
+      "rgba(255, 212, 0, .22)", "rgba(214, 128, 64, .26)", "rgba(20, 184, 166, .26)"];
+    var n = laptopShots.length, top = 0, len = 1, cur = -1, p = 0;
+
+    function measure() {
+      top = track.getBoundingClientRect().top + window.scrollY;
+      len = Math.max(1, track.offsetHeight - window.innerHeight);
+    }
+    function mark(list, i) {
+      for (var k = 0; k < list.length; k++) list[k].classList.toggle("is-on", k === i);
+    }
+    function setActive(i) {
+      if (i === cur) return;
+      cur = i;
+      mark(buttons, i); mark(details, i); mark(laptopShots, i); mark(phoneShots, i);
+      num.textContent = String(i + 1).padStart(2, "0");
+      stageWrap.style.setProperty("--site-glow", glows[i % glows.length]);
+    }
+    // scroll the screenshot inside its screen like someone browsing the site
+    function browse(img, local) {
+      var travel = img.offsetHeight - img.parentNode.offsetHeight;
+      if (travel <= 0) return;
+      var t = ease(clamp((local - .1) / .8, 0, 1));
+      img.style.transform = "translate3d(0," + (-travel * .82 * t).toFixed(1) + "px,0)";
+    }
+    function update(instant) {
+      var r = track.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > window.innerHeight) return;
+      var target = clamp((window.scrollY - top) / len, 0, 1);
+      p = instant ? target : p + (target - p) * (lenis ? 0.22 : 0.14);
+      if (Math.abs(target - p) < 0.0003) p = target;
+      var x = p * n, i = Math.min(n - 1, Math.floor(x)), local = Math.min(1, x - i);
+      setActive(i);
+      browse(laptopShots[i], local);
+      browse(phoneShots[i], local);
+      count.style.setProperty("--sp", ((i + local) / n).toFixed(3));
+      if (!instant) {
+        laptop.style.transform = "rotateX(" + (-15 + p * 5).toFixed(2) + "deg) rotateY(" + (-22 + p * 12).toFixed(2) + "deg)";
+        phone.style.transform = "translateY(" + (-Math.sin(local * Math.PI) * 14).toFixed(1) +
+          "px) rotateY(" + (-24 + p * 10).toFixed(2) + "deg) rotateX(6deg) rotateZ(1deg)";
+      }
+    }
+    each("#siteList button", function (b) {
+      b.addEventListener("click", function () {
+        scrollToTarget(top + (parseInt(b.dataset.i, 10) + .5) / n * len);
       });
     });
-    document.getElementById("rows").addEventListener("pointerleave", function () {
-      pv.on = false;
-      preview.classList.remove("is-on");
-    });
-  }
+    measure();
+    setActive(0);
+    return { measure: measure, update: update };
+  })();
 
   // ---------- Marquee ----------
   var marquees = Array.prototype.map.call(document.querySelectorAll(".marquee__row"), function (row) {
@@ -464,11 +553,13 @@
 
     if (seq) {
       var target = seq.progress();
-      seqP += (target - seqP) * (lenis ? 0.35 : 0.12);
+      seqP += (target - seqP) * (lenis ? 0.22 : 0.12);
       if (Math.abs(target - seqP) < 0.0004) seqP = target;
       if (seqP !== seq.last) seq.render(seqP);
       seq.last = seqP;
     }
+
+    if (sites) sites.update(reduceMotion);
 
     // manifesto words
     var mr = manifesto.getBoundingClientRect();
@@ -488,17 +579,11 @@
         cases[i].style.setProperty("--dim", (t * .55).toFixed(3));
       }
 
-      // cursor ring + floating preview
-      if (finePointer) {
-        ring.x = lerp(ring.x, mouse.x, 0.18);
-        ring.y = lerp(ring.y, mouse.y, 0.18);
-        cursor.style.transform = "translate3d(" + ring.x + "px," + ring.y + "px,0)";
-        var dx = mouse.x - pv.x;
-        pv.x = lerp(pv.x, mouse.x, 0.12);
-        pv.y = lerp(pv.y, mouse.y, 0.12);
-        pv.rot = lerp(pv.rot, clamp(dx * 0.05, -10, 10), 0.1);
-        preview.style.transform = "translate3d(" + pv.x + "px," + pv.y + "px,0) translate(-50%,-50%) rotate(" +
-          pv.rot + "deg) scale(" + (pv.on ? 1 : .6) + ")";
+      // device mockups straighten up as their card scrolls into place
+      for (var ci = 0; ci < cases.length; ci++) {
+        var cr = cases[ci].getBoundingClientRect();
+        if (cr.top > vh || cr.bottom < 0) continue;
+        cases[ci].style.setProperty("--tilt", clamp((cr.top - vh * .1) / (vh * .75), 0, 1).toFixed(3));
       }
 
       var boost = 1 + Math.min(Math.abs(velocity) * 0.25, 8);
@@ -524,6 +609,7 @@
 
   function remeasure() {
     placeCases();
+    if (sites) sites.measure();
     if (!seq) return;
     seq.measure();
     seq.last = null;

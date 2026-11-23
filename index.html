@@ -8,7 +8,7 @@
   <meta name="theme-color" content="#08080a" />
   <meta property="og:title" content="Anatoli Valev — Backend Engineer" />
   <meta property="og:description" content="APIs, data pipelines and automation in Python: FastAPI, PostgreSQL, Docker." />
-  <meta property="og:image" content="assets/img/scraper.webp" />
+  <meta property="og:image" content="https://agvalev.github.io/assets/og.jpg" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -43,8 +43,6 @@
   </div>
 
   <div class="grain" aria-hidden="true"></div>
-  <div class="cursor" id="cursor" aria-hidden="true"><span class="cursor__label" id="cursorLabel"></span></div>
-  <div class="cursor-dot" id="cursorDot" aria-hidden="true"></div>
   <div class="progress" id="progress" aria-hidden="true"></div>
 
   <header class="nav" id="top">
@@ -56,9 +54,10 @@
 
       <nav class="nav__links" id="navLinks" aria-label="Main">
         <a href="#work"><span class="nav__num">01</span><span lang="en">Work</span><span lang="bg">Проекти</span></a>
-        <a href="#about"><span class="nav__num">02</span><span lang="en">About</span><span lang="bg">За мен</span></a>
-        <a href="#stack"><span class="nav__num">03</span><span lang="en">Stack</span><span lang="bg">Технологии</span></a>
-        <a href="#contact"><span class="nav__num">04</span><span lang="en">Contact</span><span lang="bg">Контакт</span></a>
+        <a href="#sites"><span class="nav__num">02</span><span lang="en">Sites</span><span lang="bg">Сайтове</span></a>
+        <a href="#about"><span class="nav__num">03</span><span lang="en">About</span><span lang="bg">За мен</span></a>
+        <a href="#stack"><span class="nav__num">04</span><span lang="en">Stack</span><span lang="bg">Технологии</span></a>
+        <a href="#contact"><span class="nav__num">05</span><span lang="en">Contact</span><span lang="bg">Контакт</span></a>
       </nav>
 
       <div class="nav__tools">
@@ -181,7 +180,7 @@
 
         <div class="manifesto__foot">
           <div class="manifesto__cta reveal-me">
-            <a class="btn btn--gold magnetic" href="#work" data-cursor="Explore">
+            <a class="btn btn--gold magnetic" href="#work">
               <span lang="en">Selected work</span><span lang="bg">Избрани проекти</span>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>
             </a>
@@ -216,7 +215,7 @@
           <li class="svc__row">
             <span class="svc__num">02</span>
             <h3><span lang="en">Data &amp; Automation</span><span lang="bg">Данни и автоматизация</span></h3>
-            <p><span lang="en">Scrapers, scheduled pipelines and spreadsheet automation that replace hours of manual work with a cron job.</span><span lang="bg">Скрейпъри, планирани процеси и автоматизация на таблици, които заменят часове ръчна работа с един cron.</span></p>
+            <p><span lang="en">Scrapers, scheduled pipelines and background jobs that replace hours of manual work with a single cron job.</span><span lang="bg">Скрейпъри, планирани процеси и фонови задачи, които заменят часове ръчна работа с един cron.</span></p>
             <span class="svc__arrow" aria-hidden="true">↗</span>
           </li>
           <li class="svc__row">
@@ -228,7 +227,7 @@
           <li class="svc__row">
             <span class="svc__num">04</span>
             <h3><span lang="en">Web Experiences</span><span lang="bg">Уеб преживявания</span></h3>
-            <p><span lang="en">Fast, animated websites — from client sites to Next.js and canvas work. You're scrolling through one.</span><span lang="bg">Бързи, анимирани сайтове — от клиентски сайтове до Next.js и canvas. В момента скролваш един от тях.</span></p>
+            <p><span lang="en">Fast, animated websites for local businesses — from plain HTML to Next.js, Three.js and canvas. You're scrolling through one.</span><span lang="bg">Бързи, анимирани сайтове за местен бизнес — от чист HTML до Next.js, Three.js и canvas. В момента скролваш един от тях.</span></p>
             <span class="svc__arrow" aria-hidden="true">↗</span>
           </li>
         </ol>
@@ -244,17 +243,57 @@
             <h2 data-split><span lang="en">Case <em>studies</em></span><span lang="bg">Проекти в <em>детайл</em></span></h2>
           </div>
           <p class="head__note reveal-me">
-            <span lang="en">Three projects that show how I think — from data platforms to desktop products.</span>
-            <span lang="bg">Три проекта, които показват как мисля — от платформи за данни до десктоп продукти.</span>
+            <span lang="en">Three projects that show how I think — from desktop apps to data platforms and quant research.</span>
+            <span lang="bg">Три проекта, които показват как мисля — от десктоп приложения до платформи за данни и количествен анализ.</span>
           </p>
         </div>
 
-        <div class="stack" id="stack-cards">
-          <!-- 01 Fuel API -->
+        <div class="stack">
+          <!-- 01 YouTube → MP3 -->
+          <article class="case" style="--accent-c: #ff5d73">
+            <div class="case__info">
+              <div class="case__top"><span class="case__idx">01</span><span class="case__type"><span lang="en">Desktop app · Diploma project</span><span lang="bg">Десктоп приложение · Дипломна работа</span></span></div>
+              <h3>YouTube <em>→</em> MP3</h3>
+              <p class="case__lead">
+                <span lang="en">My diploma project: a desktop app that turns any YouTube video, playlist or channel into MP3s. Built on the open-source yt-downloader-gui and extended with a built-in audio player, reliable MP3 playlist downloads and a redesigned interface.</span>
+                <span lang="bg">Дипломната ми работа: десктоп приложение, което превръща всяко YouTube видео, плейлист или канал в MP3. Изградено върху open-source проекта yt-downloader-gui и надградено с вграден аудио плейър, надеждно сваляне на MP3 плейлисти и нов интерфейс.</span>
+              </p>
+              <dl class="metrics">
+                <div><dt>4</dt><dd lang="en">link types detected</dd><dd lang="bg">вида линкове</dd></div>
+                <div><dt>320</dt><dd lang="en">kbps MP3 by default</dd><dd lang="bg">kbps MP3 по подразбиране</dd></div>
+                <div><dt>0</dt><dd lang="en">UI freezes — threaded</dd><dd lang="bg">забивания — с нишки</dd></div>
+              </dl>
+              <div class="case__foot">
+                <ul class="tags"><li>Python</li><li>PyQt6</li><li>yt-dlp</li><li>FFmpeg</li><li>QThread</li></ul>
+                <a class="case__link" href="https://github.com/agvalev/youtube-mp3-diploma" target="_blank" rel="noopener">GitHub <span aria-hidden="true">↗</span></a>
+              </div>
+            </div>
+            <div class="case__visual case__visual--app" aria-hidden="true">
+              <div class="win">
+                <div class="win__bar">
+                  <span class="win__icon"></span>
+                  <span class="win__title">yt-downloader-gui — Anatoli Valev Project</span>
+                  <span class="win__ctl"><i class="min"></i><i class="max"></i><i class="close"></i></span>
+                </div>
+                <img src="assets/img/ytmp3.webp" alt="" loading="lazy" width="1100" height="720" />
+              </div>
+              <div class="float float--dl">
+                <div class="float__row"><b>lofi coding beats</b><span>7 / 12</span></div>
+                <div class="float__bar"><i></i></div>
+                <div class="float__row float__row--sub"><span>MP3 · 320 kbps</span><span>4.2 MB/s</span></div>
+              </div>
+              <div class="float float--now">
+                <span class="eq"><i></i><i></i><i></i><i></i><i></i></span>
+                <div><b>Now playing</b><span>track_07.mp3 · 02:41</span></div>
+              </div>
+            </div>
+          </article>
+
+          <!-- 02 Fuel API -->
           <article class="case" style="--accent-c: #d8b77a">
             <div class="case__info">
-              <div class="case__top"><span class="case__idx">01</span><span class="case__type"><span lang="en">Backend · Team project</span><span lang="bg">Бекенд · Екипен проект</span></span></div>
-              <h3>Fuel API</h3>
+              <div class="case__top"><span class="case__idx">02</span><span class="case__type"><span lang="en">Backend · Team project</span><span lang="bg">Бекенд · Екипен проект</span></span></div>
+              <h3>Fuel <em>API</em></h3>
               <p class="case__lead">
                 <span lang="en">A production-style data platform that scrapes fuel prices across Europe and serves them through a clean REST API — containerised, tested and updated by itself every day.</span>
                 <span lang="bg">Платформа за данни в production стил, която събира цените на горивата в Европа и ги предоставя чрез чисто REST API — в контейнери, с тестове и с ежедневно самообновяване.</span>
@@ -264,28 +303,50 @@
                 <div><dt>80%+</dt><dd lang="en">test coverage</dd><dd lang="bg">покритие с тестове</dd></div>
                 <div><dt>24h</dt><dd lang="en">auto-refresh via CI</dd><dd lang="bg">автообновяване с CI</dd></div>
               </dl>
-              <ul class="tags"><li>FastAPI</li><li>PostgreSQL</li><li>Docker</li><li>GitHub Actions</li><li>pytest</li></ul>
+              <div class="case__foot">
+                <ul class="tags"><li>FastAPI</li><li>PostgreSQL</li><li>Docker</li><li>GitHub Actions</li><li>pytest</li></ul>
+              </div>
             </div>
-            <div class="case__visual case__visual--code" data-cursor="API">
-<pre><code><span class="c-m">GET</span> /api/v1/fuel/latest?country=Germany
-
-<span class="c-m">200 OK · 38ms</span>
-{
+            <div class="case__visual case__visual--docs" aria-hidden="true">
+              <div class="docs">
+                <div class="docs__bar"><span class="dots"><i></i><i></i><i></i></span><span class="docs__url">localhost:8000/docs</span></div>
+                <div class="docs__body">
+                  <div class="docs__head"><b>Fuel API</b><span class="pill">1.0</span><span class="pill pill--g">OAS 3.1</span></div>
+                  <p class="docs__desc">European fuel prices — gasoline, diesel and LPG.</p>
+                  <div class="ep is-open">
+                    <div class="ep__row"><span class="m">GET</span><code>/api/v1/fuel/latest</code><span class="ep__sum">Latest prices</span></div>
+                    <div class="ep__body">
+                      <div class="params">
+                        <div><span>country</span><em>string · query</em><code>Germany</code></div>
+                        <div><span>currency</span><em>string · query</em><code>EUR</code></div>
+                      </div>
+                      <div class="resp"><span class="code200">200</span><pre>{
   <span class="c-s">"country"</span>: <span class="c-s">"Germany"</span>,
   <span class="c-s">"gasoline"</span>: <span class="c-n">1.79</span>,
-  <span class="c-s">"diesel"</span>:   <span class="c-n">1.68</span>,
-  <span class="c-s">"lpg"</span>:      <span class="c-n">1.05</span>,
-  <span class="c-s">"change_7d"</span>: <span class="c-n">-0.4</span>,
-  <span class="c-s">"currency"</span>: <span class="c-s">"EUR"</span>
-}</code></pre>
+  <span class="c-s">"diesel"</span>: <span class="c-n">1.68</span>,
+  <span class="c-s">"lpg"</span>: <span class="c-n">1.05</span>,
+  <span class="c-s">"change_7d"</span>: <span class="c-n">-0.4</span>
+}</pre></div>
+                    </div>
+                  </div>
+                  <div class="ep"><div class="ep__row"><span class="m">GET</span><code>/api/v1/countries</code><span class="ep__sum">All countries</span></div></div>
+                  <div class="ep"><div class="ep__row"><span class="m">GET</span><code>/health</code><span class="ep__sum">Health check</span></div></div>
+                </div>
+              </div>
+              <div class="float float--term">
+                <p><span class="c-p">$</span> docker compose up -d</p>
+                <p><span class="c-ok">✔</span> Container fuel-db <span class="c-ok">Started</span></p>
+                <p><span class="c-ok">✔</span> Container fuel-api <span class="c-ok">Started</span></p>
+                <p><span class="c-p">$</span> make scrape<span class="type-caret"></span></p>
+              </div>
             </div>
           </article>
 
-          <!-- 02 XAUUSD -->
+          <!-- 03 Gold Strategy Lab -->
           <article class="case" style="--accent-c: #e3a94f">
             <div class="case__info">
-              <div class="case__top"><span class="case__idx">02</span><span class="case__type"><span lang="en">Quant research · Team project</span><span lang="bg">Количествен анализ · Екипен проект</span></span></div>
-              <h3><span lang="en">Gold Strategy Lab</span><span lang="bg">Лаборатория за злато</span></h3>
+              <div class="case__top"><span class="case__idx">03</span><span class="case__type"><span lang="en">Quant research · Team project</span><span lang="bg">Количествен анализ · Екипен проект</span></span></div>
+              <h3><span lang="en">Gold Strategy <em>Lab</em></span><span lang="bg">Лаборатория за <em>злато</em></span></h3>
               <p class="case__lead">
                 <span lang="en">Algorithmic trading research on XAUUSD run with the discipline of a lab: rules frozen in writing before any test, every rejected candidate documented, full-grid optimisations driven from Python.</span>
                 <span lang="bg">Изследване на алгоритмична търговия със злато с дисциплина на лаборатория: правилата се фиксират писмено преди всеки тест, всеки отхвърлен вариант е документиран, а пълните оптимизации се пускат от Python.</span>
@@ -295,40 +356,21 @@
                 <div><dt>100%</dt><dd lang="en">results documented</dd><dd lang="bg">документирани резултати</dd></div>
                 <div><dt>0</dt><dd lang="en">martingale, ever</dd><dd lang="bg">мартингейл, никога</dd></div>
               </dl>
-              <ul class="tags"><li>MQL5</li><li>Python</li><li>Backtesting</li><li>Risk</li></ul>
+              <div class="case__foot">
+                <ul class="tags"><li>MQL5</li><li>Python</li><li>Backtesting</li><li>Risk</li></ul>
+              </div>
             </div>
-            <div class="case__visual case__visual--chart" data-cursor="Chart" aria-hidden="true">
-              <svg viewBox="0 0 320 170" preserveAspectRatio="none">
-                <defs><linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d8b77a" stop-opacity=".35"/><stop offset="1" stop-color="#d8b77a" stop-opacity="0"/></linearGradient></defs>
-                <path class="chart__area" d="M0 140 L30 128 L60 132 L90 110 L120 116 L150 90 L180 96 L210 70 L240 76 L270 48 L300 52 L320 30 L320 170 L0 170Z" fill="url(#area)"/>
-                <path class="chart__line" d="M0 140 L30 128 L60 132 L90 110 L120 116 L150 90 L180 96 L210 70 L240 76 L270 48 L300 52 L320 30"/>
-                <g class="chart__grid"><path d="M0 42H320M0 85H320M0 128H320"/></g>
-              </svg>
-              <div class="chart__badge">XAUUSD · M1</div>
-            </div>
-          </article>
-
-          <!-- 03 Watermarker -->
-          <article class="case" style="--accent-c: #c8a2ff">
-            <div class="case__info">
-              <div class="case__top"><span class="case__idx">03</span><span class="case__type"><span lang="en">Desktop product</span><span lang="bg">Десктоп продукт</span></span></div>
-              <h3>Bulk Watermarker</h3>
-              <p class="case__lead">
-                <span lang="en">A product, not a script: batch resize, watermark, rename and convert hundreds of photos with a live preview. Ships as one Windows .exe — no Python, no uploads, originals never touched.</span>
-                <span lang="bg">Продукт, а не скрипт: масово оразмеряване, воден знак, преименуване и конвертиране на стотици снимки с преглед на живо. Един .exe за Windows — без Python, без качване онлайн, оригиналите остават непокътнати.</span>
-              </p>
-              <dl class="metrics">
-                <div><dt>1</dt><dd lang="en">file to install</dd><dd lang="bg">файл за инсталация</dd></div>
-                <div><dt>0</dt><dd lang="en">uploads to the cloud</dd><dd lang="bg">качвания в облака</dd></div>
-                <div><dt>5</dt><dd lang="en">image formats</dd><dd lang="bg">формата снимки</dd></div>
-              </dl>
-              <ul class="tags"><li>Python</li><li>PyQt6</li><li>Pillow</li><li>PyInstaller</li></ul>
-            </div>
-            <div class="case__visual case__visual--ui" data-cursor="App" aria-hidden="true">
-              <div class="mock">
-                <div class="mock__col"><i></i><i></i><i></i><i></i></div>
-                <div class="mock__preview"><span>© MyShop</span></div>
-                <div class="mock__col mock__col--opts"><b></b><b></b><b></b><em></em></div>
+            <div class="case__visual case__visual--mt5" aria-hidden="true">
+              <div class="mt5">
+                <div class="mt5__bar"><b>XAUUSD</b><span>M1</span><span class="mt5__ohlc" id="ohlc"></span></div>
+                <div class="mt5__plot"><svg class="mt5__chart" id="candles" viewBox="0 0 600 300" preserveAspectRatio="none"></svg></div>
+              </div>
+              <div class="float float--tester">
+                <p class="float__k">Strategy Tester · CappedBasket v1.02</p>
+                <div class="tester__row"><span>2025</span><b class="up">+$105.41</b></div>
+                <div class="tester__row"><span>2026 (to Sep 10)</span><b class="up">+$353.99</b></div>
+                <div class="tester__row"><span lang="en">Risk per trade</span><span lang="bg">Риск на сделка</span><b>0.75%</b></div>
+                <div class="tester__row"><span lang="en">Rules frozen before test</span><span lang="bg">Правила преди теста</span><b class="up">✓</b></div>
               </div>
             </div>
           </article>
@@ -336,54 +378,116 @@
       </div>
     </section>
 
-    <!-- MORE WORK: index list with cursor preview -->
-    <section class="index-list">
+    <!-- WEBSITES: a second MacBook + iPhone showing real screenshots -->
+    <section class="sites" id="sites">
       <div class="wrap">
-        <div class="head">
-          <p class="label"><span class="label__num">(04)</span> <span lang="en">More work</span><span lang="bg">Още проекти</span></p>
+        <div class="head head--row">
+          <div>
+            <p class="label"><span class="label__num">(04)</span> <span lang="en">Websites</span><span lang="bg">Уебсайтове</span></p>
+            <h2 data-split><span lang="en">Built for local <em>businesses</em></span><span lang="bg">Сайтове за местен <em>бизнес</em></span></h2>
+          </div>
+          <p class="head__note reveal-me">
+            <span lang="en">Concept sites I designed and built for real businesses in Ruse — each with its own identity, copy and motion.</span>
+            <span lang="bg">Концептуални сайтове, които проектирах и изработих за реални бизнеси в Русе — всеки със своя идентичност, текстове и анимации.</span>
+          </p>
         </div>
-        <ul class="rows" id="rows">
-          <li><a class="row" data-preview="pv-scraper" data-cursor="View">
-            <span class="row__num">04</span><span class="row__title"><span lang="en">Product Scraper → Excel</span><span lang="bg">Скрейпър на продукти → Excel</span></span>
-            <span class="row__cat"><span lang="en">1,000 products in under a minute</span><span lang="bg">1000 продукта за под минута</span></span><span class="row__arrow">↗</span></a></li>
-          <li><a class="row" data-preview="pv-sheets" data-cursor="View">
-            <span class="row__num">05</span><span class="row__title"><span lang="en">Inventory Automation</span><span lang="bg">Автоматизация на склад</span></span>
-            <span class="row__cat">Google Apps Script</span><span class="row__arrow">↗</span></a></li>
-          <li><a class="row" data-preview="pv-subs" data-cursor="View">
-            <span class="row__num">06</span><span class="row__title"><span lang="en">AI Subtitles + 9:16 Video</span><span lang="bg">AI субтитри + 9:16 видео</span></span>
-            <span class="row__cat">Whisper · FFmpeg</span><span class="row__arrow">↗</span></a></li>
-          <li><a class="row" href="https://github.com/agvalev/youtube-mp3-diploma" target="_blank" rel="noopener" data-preview="pv-mp3" data-cursor="GitHub">
-            <span class="row__num">07</span><span class="row__title">YouTube → MP3</span>
-            <span class="row__cat"><span lang="en">Desktop app · Diploma</span><span lang="bg">Десктоп · Диплома</span></span><span class="row__arrow">↗</span></a></li>
-          <li><a class="row" href="https://github.com/agvalev/R-Dent" target="_blank" rel="noopener" data-preview="pv-dent" data-cursor="GitHub">
-            <span class="row__num">08</span><span class="row__title"><span lang="en">R-Dent Dental Clinic</span><span lang="bg">R-Dent дентална клиника</span></span>
-            <span class="row__cat"><span lang="en">Client website</span><span lang="bg">Клиентски сайт</span></span><span class="row__arrow">↗</span></a></li>
-          <li><a class="row" data-preview="pv-corona" data-cursor="View">
-            <span class="row__num">09</span><span class="row__title">CORONA Billiard Club</span>
-            <span class="row__cat">Next.js · Framer Motion</span><span class="row__arrow">↗</span></a></li>
-        </ul>
       </div>
 
-      <!-- floating previews (follow the cursor on desktop) -->
-      <div class="preview" id="preview" aria-hidden="true">
-        <div class="preview__inner">
-          <img id="pv-scraper" src="assets/img/scraper.webp" alt="" loading="lazy" />
-          <img id="pv-sheets" src="assets/img/sheets.webp" alt="" loading="lazy" />
-          <img id="pv-subs" src="assets/img/subtitles.webp" alt="" loading="lazy" />
-          <div id="pv-mp3" class="pv pv--mp3"><div class="player">
-            <div class="player__url">youtube.com/watch?v=…</div>
-            <div class="player__row"><span class="player__btn">▶</span><div class="player__bar"><i></i></div><span class="player__time">2:41</span></div>
-            <div class="player__list"><i></i><i></i><i></i></div>
-          </div></div>
-          <div id="pv-dent" class="pv pv--dent"><div class="site">
-            <div class="site__nav"><b>R-Dent</b><i></i><i></i><i></i></div>
-            <div class="site__hero"><strong>Премиум дентална грижа</strong><span></span></div>
-            <div class="site__cards"><i></i><i></i><i></i></div>
-          </div></div>
-          <div id="pv-corona" class="pv pv--corona"><div class="corona">
-            <span class="corona__crown">♛</span><strong>CORONA</strong><em>Private Billiard Club</em>
-            <div class="corona__table"><i></i><i></i><i></i></div>
-          </div></div>
+      <div class="sites__track" id="sitesTrack">
+        <div class="sites__sticky">
+          <div class="wrap sites__grid">
+            <div class="sites__info">
+              <p class="sites__count"><span id="siteNum">01</span><i></i><span>06</span></p>
+              <ol class="sites__list" id="siteList">
+                <li><button type="button" data-i="0">Break Point Ruse</button></li>
+                <li><button type="button" data-i="1">CORONA</button></li>
+                <li><button type="button" data-i="2">MIROFIT</button></li>
+                <li><button type="button" data-i="3">Pist Kart Extreme</button></li>
+                <li><button type="button" data-i="4"><span lang="en">Stefan Genov</span><span lang="bg">Стефан Генов</span></button></li>
+                <li><button type="button" data-i="5">R-Dent</button></li>
+              </ol>
+              <div class="sites__details">
+                <div class="sd" data-i="0">
+                  <p class="sd__cat"><span lang="en">Padel club · Concept</span><span lang="bg">Падел клуб · Концепция</span></p>
+                  <p><span lang="en">The first padel club in Ruse — bold energy, an interactive 3D padel court and online court booking front and centre.</span><span lang="bg">Първият падел клуб в Русе — смела енергия, интерактивен 3D падел корт и резервация на корт на преден план.</span></p>
+                  <ul class="tags"><li>HTML / CSS</li><li>JavaScript</li><li>Three.js</li><li>3D</li></ul>
+                  <a class="sd__link" href="https://github.com/agvalev/break-point-ruse" target="_blank" rel="noopener">GitHub ↗</a>
+                </div>
+                <div class="sd" data-i="1">
+                  <p class="sd__cat"><span lang="en">Billiard club · Concept</span><span lang="bg">Билярд клуб · Концепция</span></p>
+                  <p><span lang="en">A cinematic site for a private billiard club — emerald, matte black and champagne gold, with canvas-driven atmosphere and an interactive table.</span><span lang="bg">Кинематографичен сайт за частен билярд клуб — изумрудено, матово черно и шампанско злато, с canvas атмосфера и интерактивна маса.</span></p>
+                  <ul class="tags"><li>Next.js 15</li><li>React 19</li><li>Framer Motion</li><li>Canvas</li></ul>
+                </div>
+                <div class="sd" data-i="2">
+                  <p class="sd__cat"><span lang="en">Personal trainer · Concept</span><span lang="bg">Личен треньор · Концепция</span></p>
+                  <p><span lang="en">A high-contrast site for a certified trainer and nutritionist — services, reviews and a booking form built to turn visitors into clients.</span><span lang="bg">Контрастен сайт за сертифициран треньор и нутриционист — услуги, отзиви и форма за записване, направени да превръщат посетителите в клиенти.</span></p>
+                  <ul class="tags"><li>HTML / CSS</li><li>JavaScript</li><li>Responsive</li></ul>
+                </div>
+                <div class="sd" data-i="3">
+                  <p class="sd__cat"><span lang="en">Karting track · Concept</span><span lang="bg">Картинг писта · Концепция</span></p>
+                  <p><span lang="en">450 metres of asphalt, told with racing yellow — lap packages, an animated track map and a clear path to booking.</span><span lang="bg">450 метра асфалт в състезателно жълто — пакети обиколки, анимирана карта на пистата и ясен път до резервация.</span></p>
+                  <ul class="tags"><li>HTML / CSS</li><li>JavaScript</li><li>SVG</li></ul>
+                </div>
+                <div class="sd" data-i="4">
+                  <p class="sd__cat"><span lang="en">Psychotherapist · Concept</span><span lang="bg">Психотерапевт · Концепция</span></p>
+                  <p><span lang="en">Calm, warm and personal — a site for a psychotherapist that explains how therapy works and makes the first step feel easy.</span><span lang="bg">Спокоен, топъл и личен — сайт за психотерапевт, който обяснява как протича терапията и прави първата стъпка лесна.</span></p>
+                  <ul class="tags"><li>HTML / CSS</li><li>JavaScript</li><li>Typography</li></ul>
+                </div>
+                <div class="sd" data-i="5">
+                  <p class="sd__cat"><span lang="en">Dental clinic · Website</span><span lang="bg">Дентална клиника · Сайт</span></p>
+                  <p><span lang="en">A multi-page site for a modern dental clinic: services, team, gallery, patient information and contacts.</span><span lang="bg">Многостраничен сайт за модерна дентална клиника: услуги, екип, галерия, информация за пациенти и контакти.</span></p>
+                  <ul class="tags"><li>HTML / CSS</li><li>JavaScript</li><li>Multi-page</li></ul>
+                  <a class="sd__link" href="https://github.com/agvalev/R-Dent" target="_blank" rel="noopener">GitHub ↗</a>
+                </div>
+              </div>
+            </div>
+
+            <div class="sites__stage" id="sitesStage" aria-hidden="true">
+              <div class="device-laptop">
+                <div class="stage" id="laptop2">
+                  <div class="lid">
+                    <div class="lid__back"><span>AV</span></div>
+                    <div class="lid__front">
+                      <div class="screen">
+                        <div class="notch"></div>
+                        <div class="shots" data-device="laptop">
+                          <img class="shot" src="assets/sites/breakpoint-d.webp" alt="" loading="lazy" />
+                          <img class="shot" src="assets/sites/corona-d.webp" alt="" loading="lazy" />
+                          <img class="shot" src="assets/sites/mirofit-d.webp" alt="" loading="lazy" />
+                          <img class="shot" src="assets/sites/pistkart-d.webp" alt="" loading="lazy" />
+                          <img class="shot" src="assets/sites/genov-d.webp" alt="" loading="lazy" />
+                          <img class="shot" src="assets/sites/rdent-d.webp" alt="" loading="lazy" />
+                        </div>
+                        <div class="screen__shine"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="base">
+                    <div class="base__top">
+                      <div class="kbd"></div>
+                      <div class="trackpad"></div>
+                    </div>
+                    <div class="base__front"></div>
+                    <div class="base__shadow"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="phone" id="phone">
+                <span class="phone__btn phone__btn--a"></span><span class="phone__btn phone__btn--b"></span><span class="phone__btn phone__btn--c"></span>
+                <div class="phone__screen">
+                  <span class="phone__island"></span>
+                  <div class="shots" data-device="phone">
+                    <img class="shot" src="assets/sites/breakpoint-m.webp" alt="" loading="lazy" />
+                    <img class="shot" src="assets/sites/corona-m.webp" alt="" loading="lazy" />
+                    <img class="shot" src="assets/sites/mirofit-m.webp" alt="" loading="lazy" />
+                    <img class="shot" src="assets/sites/pistkart-m.webp" alt="" loading="lazy" />
+                    <img class="shot" src="assets/sites/genov-m.webp" alt="" loading="lazy" />
+                    <img class="shot" src="assets/sites/rdent-m.webp" alt="" loading="lazy" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -406,13 +510,13 @@
           <div class="tile tile--xl">
             <p class="tile__k">Backend</p>
             <p class="tile__big">Python <em>&amp;</em> FastAPI</p>
-            <p class="tile__p"><span lang="en">My home turf: typed, async APIs with OpenAPI docs, dependency injection and tests from day one.</span><span lang="bg">Моята територия: типизирани, асинхронни API-та с OpenAPI документация, dependency injection и тестове от първия ден.</span></p>
+            <p class="tile__p"><span lang="en">My home turf: clean REST APIs with OpenAPI docs, a clear project structure and tests from day one.</span><span lang="bg">Моята територия: чисти REST API-та с OpenAPI документация, ясна структура и тестове от първия ден.</span></p>
             <ul class="tags"><li>FastAPI</li><li>Django</li><li>REST</li><li>pytest</li><li>Uvicorn</li></ul>
           </div>
           <div class="tile">
             <p class="tile__k">Data</p>
             <p class="tile__big">PostgreSQL</p>
-            <ul class="tags"><li>SQL</li><li>SQLAlchemy</li><li>Excel / CSV</li></ul>
+            <ul class="tags"><li>SQL</li><li>psycopg2</li><li>Schemas</li></ul>
           </div>
           <div class="tile">
             <p class="tile__k">DevOps</p>
@@ -422,12 +526,12 @@
           <div class="tile tile--wide">
             <p class="tile__k"><span lang="en">Automation</span><span lang="bg">Автоматизация</span></p>
             <p class="tile__big"><span lang="en">If it repeats, <em>I script it.</em></span><span lang="bg">Ако се повтаря, <em>го автоматизирам.</em></span></p>
-            <ul class="tags"><li>BeautifulSoup</li><li>Requests</li><li>Apps Script</li><li>Whisper AI</li><li>FFmpeg</li></ul>
+            <ul class="tags"><li>BeautifulSoup</li><li>Requests</li><li>yt-dlp</li><li>FFmpeg</li><li>Cron</li></ul>
           </div>
           <div class="tile">
             <p class="tile__k">Frontend</p>
             <p class="tile__big">TS &amp; Next.js</p>
-            <ul class="tags"><li>HTML / CSS</li><li>Tailwind</li><li>Canvas</li></ul>
+            <ul class="tags"><li>HTML / CSS</li><li>Tailwind</li><li>Three.js</li><li>Canvas</li></ul>
           </div>
           <div class="tile tile--live">
             <p class="tile__k"><span lang="en">Currently learning</span><span lang="bg">В момента уча</span></p>
@@ -479,9 +583,9 @@
         </div>
         <ol class="edu__list">
           <li><span class="edu__y"><span lang="en">Now</span><span lang="bg">Сега</span></span><span class="edu__t">Python Web — FastAPI &amp; Django</span><span class="edu__s">SoftUni</span></li>
-          <li><a href="https://github.com/agvalev/SoftuniPythonOOP2024" target="_blank" rel="noopener" data-cursor="GitHub"><span class="edu__y">2024</span><span class="edu__t">Python OOP</span><span class="edu__s">SoftUni ↗</span></a></li>
-          <li><a href="https://github.com/agvalev/SoftuniPythonAdvanced2024" target="_blank" rel="noopener" data-cursor="GitHub"><span class="edu__y">2024</span><span class="edu__t">Python Advanced</span><span class="edu__s">SoftUni ↗</span></a></li>
-          <li><a href="https://github.com/agvalev/SoftuniFundamentals2024" target="_blank" rel="noopener" data-cursor="GitHub"><span class="edu__y">2024</span><span class="edu__t">Programming Fundamentals</span><span class="edu__s">SoftUni ↗</span></a></li>
+          <li><a href="https://github.com/agvalev/SoftuniPythonOOP2024" target="_blank" rel="noopener"><span class="edu__y">2024</span><span class="edu__t">Python OOP</span><span class="edu__s">SoftUni ↗</span></a></li>
+          <li><a href="https://github.com/agvalev/SoftuniPythonAdvanced2024" target="_blank" rel="noopener"><span class="edu__y">2024</span><span class="edu__t">Python Advanced</span><span class="edu__s">SoftUni ↗</span></a></li>
+          <li><a href="https://github.com/agvalev/SoftuniFundamentals2024" target="_blank" rel="noopener"><span class="edu__y">2024</span><span class="edu__t">Programming Fundamentals</span><span class="edu__s">SoftUni ↗</span></a></li>
           <li><span class="edu__y">2021</span><span class="edu__t"><span lang="en">First line of code</span><span lang="bg">Първи ред код</span></span><span class="edu__s">print("hello")</span></li>
         </ol>
       </div>
@@ -497,12 +601,12 @@
           <span lang="bg">Да създадем нещо <em>изключително.</em></span>
         </h2>
         <div class="contact__row">
-          <a class="orb magnetic" href="mailto:anatoligvalev@gmail.com" data-cursor="Write">
+          <a class="orb magnetic" href="mailto:anatoligvalev@gmail.com">
             <span lang="en">Start a<br />project</span><span lang="bg">Започни<br />проект</span>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>
           </a>
           <div class="contact__info">
-            <button class="mail" id="copyBtn" type="button" data-email="anatoligvalev@gmail.com" data-cursor="Copy">
+            <button class="mail" id="copyBtn" type="button" data-email="anatoligvalev@gmail.com">
               <span class="mail__addr">anatoligvalev@gmail.com</span>
               <span class="mail__hint"><span class="copy-label"><span lang="en">Click to copy</span><span lang="bg">Натисни за копиране</span></span><span class="copy-done"><span lang="en">Copied ✓</span><span lang="bg">Копирано ✓</span></span></span>
             </button>
