@@ -35,6 +35,7 @@
 /* ---------- HUD corners ---------- */
 .hud { position: fixed; inset: auto 0 0 0; z-index: 55; pointer-events: none; font: 500 10.5px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); mix-blend-mode: difference; opacity: 0; transition: opacity 1.2s var(--ease); }
 .hud.is-on { opacity: 1; }
+.hud.is-on.is-hero { opacity: 0; }
 .hud__bl, .hud__br { position: absolute; bottom: 22px; display: flex; align-items: center; gap: 12px; }
 .hud__bl { left: 26px; }
 .hud__br { right: 26px; }

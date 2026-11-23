@@ -587,7 +587,63 @@ export function createMacbook(host, screenEl, opts = {}) {
     css.render(cssScene, camera);
   }
 
-  return { render, resize, screenInfo, coverDistance, setExplode, project, camera, DIM };
+  // ----- materialising intro (Igloo-style): the laptop is first only glowing edges, then a scan
+  // line sweeps across it and leaves the real aluminium behind. t: 0 wireframe … 1 solid
+  let setMaterialize = () => {};
+  if (opts.materialize) {
+    renderer.localClippingEnabled = true;
+    const solidPlane = new THREE.Plane(new THREE.Vector3(-1, 0, 0), 0);
+    const edgePlane = new THREE.Plane(new THREE.Vector3(1, 0, 0), 0);
+    const edgeMat = new THREE.LineBasicMaterial({
+      color: 0xe9c98c, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending,
+      depthWrite: false, clippingPlanes: [edgePlane], toneMapped: false
+    });
+    const meshes = [], edges = [];
+    root.traverse((o) => { if (o.isMesh) meshes.push(o); });
+    const mats = new Set();
+    meshes.forEach((m) => {
+      (Array.isArray(m.material) ? m.material : [m.material]).forEach((mt) => mats.add(mt));
+      if (m.geometry.type === "PlaneGeometry") return;   // decals and the shadow: no outline
+      const e = new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry, 28), edgeMat);
+      e.renderOrder = 2;
+      m.add(e);
+      edges.push(e);
+    });
+    mats.forEach((mt) => { mt.clippingPlanes = [solidPlane]; mt.needsUpdate = true; });
+    // the bright scan sheet that does the "printing"
+    const scanMat = new THREE.MeshBasicMaterial({
+      color: 0xffe2a8, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending,
+      depthWrite: false, side: THREE.DoubleSide, toneMapped: false
+    });
+    const scan = new THREE.Mesh(new THREE.PlaneGeometry(D + 3, 2.2), scanMat);
+    scan.rotation.y = Math.PI / 2;
+    scan.position.y = 1.1;
+    scene.add(scan);
+    const glow = new THREE.Mesh(new THREE.PlaneGeometry(D + 6, 7), new THREE.MeshBasicMaterial({
+      map: canvasTexture(64, 256, (g, w, h) => {
+        const gr = g.createLinearGradient(0, 0, 0, h);
+        gr.addColorStop(0, "rgba(255,210,140,0)"); gr.addColorStop(0.5, "rgba(255,210,140,1)"); gr.addColorStop(1, "rgba(255,210,140,0)");
+        g.fillStyle = gr; g.fillRect(0, 0, w, h);
+      }), transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false
+    }));
+    glow.rotation.y = Math.PI / 2;
+    glow.position.y = 1.1;
+    scene.add(glow);
+    setMaterialize = (t) => {
+      const x = THREE.MathUtils.lerp(-W / 2 - 1.2, W / 2 + 1.2, t);
+      solidPlane.constant = t >= 1 ? 1e4 : x;     // keep x <= sweep
+      edgePlane.constant = -x;                     // keep x >= sweep
+      edgeMat.opacity = 0.55 * (1 - THREE.MathUtils.smoothstep(t, 0.85, 1));
+      const on = t > 0.001 && t < 0.999;
+      scan.visible = glow.visible = on;
+      scan.position.x = glow.position.x = x;
+      scanMat.opacity = 0.85 * Math.sin(Math.PI * Math.min(1, t * 1.15));
+      edges.forEach((e) => { e.visible = t < 1; });
+    };
+    setMaterialize(0);
+  }
+
+  return { render, resize, screenInfo, coverDistance, setExplode, setMaterialize, project, camera, DIM };
 }
 
 // ---------------------------------------------------------------------------------------------

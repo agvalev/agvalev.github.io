@@ -211,11 +211,28 @@
       try {
         hero3d = window.MacBook3D.createMacbook(document.getElementById("heroMac"), screen, {
           fov: 26,
+          materialize: !reduceMotion,
           // HDRI / fonts finished loading: draw the current frame again
           onNeedsRender: function () { if (seq) seq.last = null; }
         });
         root.classList.add("has-3d");
+        if (!reduceMotion) playMaterialize();
       } catch (e) { hero3d = null; }
+    }
+    // wireframe → solid once the preloader starts to lift (or straight away on a repeat visit)
+    function playMaterialize() {
+      var loader = document.getElementById("loader"), t0 = 0;
+      (function step(now) {
+        var waiting = document.readyState !== "complete" ||
+          (root.classList.contains("is-loading") && !(loader && loader.classList.contains("is-done")));
+        if (waiting) return requestAnimationFrame(step);
+        if (!t0) t0 = now + 250;
+        var k = clamp((now - t0) / 2400, 0, 1);
+        if (window.__matHold != null) k = window.__matHold;   // review hook: freeze the sweep
+        hero3d.setMaterialize(ease(k));
+        if (seq) seq.last = null;
+        if (k < 1) requestAnimationFrame(step);
+      })(performance.now());
     }
     function render3D(open, rise, push, zoom, deep) {
       var cam = hero3d.camera, t = Math.tan(cam.fov * Math.PI / 360);
@@ -975,6 +992,7 @@
         name.innerHTML = '<span lang="en">' + list[a].en + '</span><span lang="bg">' + list[a].bg + "</span>";
         name.classList.remove("is-swap"); void name.offsetWidth; name.classList.add("is-swap");
       }
+      el.classList.toggle("is-hero", y < vh * .6);   // the hero has its own corner captions
       var pc = max > 0 ? Math.round(y / max * 100) : 0;
       if (pc !== lastPct) { lastPct = pc; pct.textContent = String(pc).padStart(3, "0"); }
     };
