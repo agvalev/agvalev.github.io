@@ -402,6 +402,53 @@
   .co__box b { font-size: 14px; }
 }
 
+/* ---------- Through the code: CSS 3D tunnel ---------- */
+.tunnel__track { position: relative; height: 520vh; }
+.tunnel__sticky { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; perspective: 1000px; perspective-origin: 50% 50%; background: var(--bg); }
+.tunnel__stars { position: absolute; inset: 0; width: 100%; height: 100%; }
+.tunnel__world { position: absolute; left: 50%; top: 50%; width: 0; height: 0; transform-style: preserve-3d; }
+.tpanel {
+  position: absolute; left: 0; top: 0; width: min(780px, 86vw); margin-left: max(-390px, -43vw); margin-top: -190px;
+  border-radius: 14px; overflow: hidden; background: rgba(13, 17, 23, .94);
+  border: 1px solid rgba(255, 255, 255, .09);
+  box-shadow: 0 50px 120px -30px rgba(0, 0, 0, .9), 0 0 0 1px rgba(216, 183, 122, .05), 0 0 80px -20px rgba(216, 183, 122, .18);
+  backface-visibility: hidden; will-change: transform, opacity;
+}
+.tpanel__bar { display: flex; align-items: center; gap: 12px; height: 36px; padding: 0 14px; background: #161b22; border-bottom: 1px solid #21262d; }
+.tpanel__bar .dots i { width: 10px; height: 10px; }
+.tpanel__file { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--mono); font-size: 12px; color: #8b949e; }
+.tpanel__tag { padding: 3px 9px; border-radius: 999px; border: 1px solid rgba(216, 183, 122, .35); font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); }
+.tpanel pre { margin: 0; padding: 18px 20px 20px; font-family: var(--mono); font-size: 14px; line-height: 1.65; color: #c9d1d9; white-space: pre; overflow: hidden; }
+.tpanel pre .ln { display: inline-block; width: 2.2em; margin-right: 1em; text-align: right; color: #3b434d; user-select: none; }
+.tword {
+  position: absolute; left: 0; top: 0; transform-style: preserve-3d; white-space: nowrap; pointer-events: none;
+  font-size: 11vw; font-weight: 600; letter-spacing: -.05em; color: transparent; -webkit-text-stroke: 1.5px rgba(216, 183, 122, .45);
+}
+.tword em { -webkit-text-stroke: 0; color: rgba(243, 223, 180, .22); }
+.tunnel__intro { position: absolute; left: 0; right: 0; top: 50%; z-index: 3; transform: translateY(-50%); text-align: center; pointer-events: none; }
+.tunnel__intro .label { justify-content: center; }
+.tunnel__intro .label::before { display: none; }
+.tunnel__title { font-size: clamp(3rem, 9vw, 9rem); font-weight: 500; letter-spacing: -.05em; line-height: .95; }
+.tunnel__hud {
+  position: absolute; left: 40px; right: 40px; bottom: 34px; z-index: 3; display: flex; align-items: center; gap: 18px;
+  font-family: var(--mono); font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); opacity: 0; transition: opacity .6s;
+}
+.tunnel__hud.is-on { opacity: 1; }
+.tunnel__count b { color: var(--gold); font-weight: 500; }
+.tunnel__bar { position: relative; width: 140px; height: 1px; background: var(--line-2); overflow: hidden; }
+.tunnel__bar i { position: absolute; inset: 0; background: var(--gold); transform-origin: 0 50%; transform: scaleX(0); }
+.tunnel__file { text-transform: none; letter-spacing: .02em; }
+.tunnel__fade { position: absolute; inset: 0; z-index: 4; background: var(--bg); opacity: 0; pointer-events: none; }
+
+@media (max-width: 860px) {
+  .tunnel__track { height: 480vh; }
+  .tpanel pre { font-size: 10.5px; padding: 12px; }
+  .tpanel { margin-top: -140px; }
+  .tunnel__hud { left: 20px; right: 20px; bottom: 22px; gap: 12px; }
+  .tunnel__bar { width: 70px; }
+  .tword { font-size: 16vw; }
+}
+
 @media (max-width: 640px) {
   .seq { --w: min(94vw, 92vh); }
   .seq__name { font-size: 23vw; }

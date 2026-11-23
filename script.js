@@ -319,6 +319,218 @@
 
   if (seq) on3D(function () { seq.init3D(); seq.measure(); seq.last = null; });
 
+  // ---------- Through the code: fly through real snippets from the projects ----------
+  var tunnel = (function () {
+    var track = document.getElementById("tunnelTrack");
+    if (!track) return null;
+    var world = document.getElementById("tunnelWorld");
+    var stars = document.getElementById("tunnelStars");
+    var intro = document.getElementById("tunnelIntro");
+    var hud = track.querySelector(".tunnel__hud");
+    var numEl = document.getElementById("tunnelNum");
+    var fileEl = document.getElementById("tunnelFile");
+    var barEl = document.getElementById("tunnelBar");
+    var fade = document.getElementById("tunnelFade");
+
+    var SNIPPETS = [
+      { tag: "Fuel API", file: "fuel-api/apps/api/app/routers/fuel.py", code: [
+        '@router.get("/fuel/latest")',
+        "async def get_latest_fuel_prices(",
+        "    currency: str = Query(",
+        '        default="EUR", regex="^(EUR|USD)$", description="Currency type (EUR or USD)"',
+        "    ),",
+        '    country: Optional[str] = Query(default=None, description="Filter by country name"),',
+        "    db: DatabaseManager = Depends(get_db),",
+        "):",
+        '    """',
+        "    Get latest fuel prices for all countries or specific country",
+        '    """'] },
+      { tag: "Scraper", file: "fuel-api/apps/scraper/scraper/web_scraping.py", code: [
+        "def get_soup(self, url: str) -> Optional[BeautifulSoup]:",
+        '    """Get BeautifulSoup object from URL with error handling"""',
+        "    try:",
+        '        logger.info(f"Fetching data from: {url}")',
+        "        response = self.session.get(url, timeout=self.timeout)",
+        "        response.raise_for_status()",
+        '        return BeautifulSoup(response.content, "html.parser")',
+        "    except requests.RequestException as e:",
+        '        logger.error(f"Error fetching data from {url}: {e}")',
+        "        return None"] },
+      { tag: "YouTube → MP3", file: "youtube-mp3-diploma/src/app/download_manager.py", code: [
+        "# Execute download command",
+        "creationflags = 0",
+        'if sys.platform == "win32":',
+        "    creationflags = subprocess.CREATE_NO_WINDOW",
+        "process = subprocess.Popen(",
+        "    cmd,",
+        "    stdout=subprocess.PIPE,",
+        "    stderr=subprocess.STDOUT,",
+        "    text=True,",
+        "    universal_newlines=True,",
+        "    creationflags=creationflags,",
+        ")"] },
+      { tag: "Gold Lab · MQL5", file: "gold-trading-bot/mt5/XAUUSD_CappedBasket/include/RiskManager.mqh", code: [
+        "const double equity=AccountInfoDouble(ACCOUNT_EQUITY);",
+        "const double target_risk=equity*risk_percent/100.0;",
+        "double loss_one_lot=0.0;",
+        "// OrderCalcProfit performs the broker/account-currency conversion for one lot.",
+        "const ENUM_ORDER_TYPE market_type=(direction==DIRECTION_LONG ? ORDER_TYPE_BUY : ORDER_TYPE_SELL);",
+        "if(equity<=0.0 || target_risk<=0.0 ||",
+        "   !OrderCalcProfit(market_type,symbol,1.0,entry,stop_loss,loss_one_lot))",
+        "  {",
+        '   reason="REJECT_POSITION_SIZE_ERROR";',
+        "   return false;",
+        "  }"] },
+      { tag: "This site", file: "agvalev.github.io/macbook3d.js", code: [
+        "// staircase: each layer rises and slides back so the one below stays visible",
+        "parts.tray.position.set(0, -2.5 * t, 9 * t);",
+        "parts.battery.position.set(0, 1.2 * t, 5 * t);",
+        "parts.board.position.set(0, 5.2 * t, -1 * t);",
+        "parts.topcase.position.set(0, 12 * t, -15 * t);",
+        "deck.position.set(0, 12 * t, -15 * t);",
+        "lid.position.y = BH + 0.035 + 17 * t;",
+        "lid.position.z = -D / 2 + 0.46 - 25 * t;"] }
+    ];
+    var WORDS = [["APIs", 0.6], ["Data", 1.6], ["<em>Automation</em>", 2.6], ["Desktop", 3.55], ["3D", 4.5]];
+
+    // tiny highlighter: comments, strings, numbers, keywords, decorators, calls
+    var KW = "from|import|def|async|await|return|try|except|if|else|for|in|not|None|True|False|class|as|const|double|bool|void|true|false|var|function|new";
+    var RE = new RegExp('(#[^\\n]*|//[^\\n]*|"""|f?"(?:\\\\.|[^"\\\\])*"|\'(?:\\\\.|[^\'\\\\])*\'|\\b\\d+(?:\\.\\d+)?\\b|\\b(?:' + KW + ')\\b|@\\w+(?:\\.\\w+)*|\\b[A-Za-z_]\\w*(?=\\())', "g");
+    function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+    function hl(line) {
+      var out = "", last = 0, m;
+      RE.lastIndex = 0;
+      while ((m = RE.exec(line))) {
+        out += esc(line.slice(last, m.index));
+        var t = m[0], cls = /^(#|\/\/)/.test(t) ? "c" : /^(f?["']|""")/.test(t) ? "s" : /^\d/.test(t) ? "n" : t[0] === "@" ? "d" :
+          new RegExp("^(?:" + KW + ")$").test(t) ? "k" : "f";
+        out += '<span class="c-' + cls + '">' + esc(t) + "</span>";
+        last = m.index + t.length;
+      }
+      return out + esc(line.slice(last));
+    }
+
+    var GAP = 1150, START = 700;
+    var narrow = window.innerWidth <= 860;
+    var items = SNIPPETS.map(function (s, i) {
+      var el = document.createElement("div");
+      el.className = "tpanel";
+      el.innerHTML = '<div class="tpanel__bar"><span class="dots"><i></i><i></i><i></i></span><span class="tpanel__file"></span><span class="tpanel__tag"></span></div><pre></pre>';
+      el.querySelector(".tpanel__file").textContent = s.file;
+      el.querySelector(".tpanel__tag").textContent = s.tag;
+      el.querySelector("pre").innerHTML = s.code.map(function (l, k) { return '<span class="ln">' + (k + 1) + "</span>" + hl(l); }).join("\n");
+      world.appendChild(el);
+      var side = i % 2 ? 1 : -1;
+      return { el: el, z: -(START + i * GAP), side: side, data: s };
+    });
+    var words = WORDS.map(function (w, i) {
+      var el = document.createElement("p");
+      el.className = "tword";
+      el.innerHTML = w[0];
+      world.appendChild(el);
+      return { el: el, z: -(START + w[1] * GAP), side: i % 2 ? -1 : 1 };
+    });
+    numEl.textContent = "01";
+    document.getElementById("tunnelTotal").textContent = String(items.length).padStart(2, "0");
+    var depth = START + (items.length - 1) * GAP + 1200;
+
+    // star field drawn on a canvas with the same perspective as the CSS scene
+    var ctx = stars.getContext("2d"), pts = [], dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var seed = 9;
+    function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+    for (var i = 0; i < 900; i++) pts.push({ x: (rnd() - .5) * 3200, y: (rnd() - .5) * 2000, z: -rnd() * (depth + 2000), g: rnd() });
+
+    var top = 0, len = 1, p = 0, last = -1, lastCam = 0;
+    function measure() {
+      top = track.getBoundingClientRect().top + window.scrollY;
+      len = Math.max(1, track.offsetHeight - window.innerHeight);
+      narrow = window.innerWidth <= 860;
+      stars.width = Math.round(stars.clientWidth * dpr);
+      stars.height = Math.round(stars.clientHeight * dpr);
+      last = -1;
+    }
+
+    function render(q) {
+      var cam = lerp(-200, depth, ease(seg(q, .06, .94)));
+      var vw = window.innerWidth, vh = window.innerHeight, P = 1000;
+      var spread = narrow ? 0.12 : 0.24;
+      world.style.transform = "translateZ(" + cam.toFixed(1) + "px)";
+      var active = 0;
+      items.forEach(function (it, i) {
+        var eff = it.z + cam;                     // distance in front of the camera (negative = ahead)
+        var o = Math.min(clamp((eff + 5200) / 2600, 0, 1), clamp(1 - (eff - 250) / 420, 0, 1));
+        it.el.style.opacity = o.toFixed(3);
+        it.el.style.visibility = o > 0.002 ? "visible" : "hidden";
+        var x = it.side * vw * spread, y = (i % 3 - 1) * vh * (narrow ? .06 : .1);
+        it.el.style.transform = "translate3d(" + x.toFixed(1) + "px," + y.toFixed(1) + "px," + it.z + "px) rotateY(" + (-it.side * (narrow ? 6 : 16)) + "deg)";
+        if (eff > -GAP * 0.75) active = i;
+      });
+      words.forEach(function (w) {
+        var eff = w.z + cam;
+        var o = Math.min(clamp((eff + 4200) / 2000, 0, 1), clamp(1 - (eff - 100) / 500, 0, 1));
+        w.el.style.opacity = o.toFixed(3);
+        w.el.style.transform = "translate3d(" + (w.side * vw * (narrow ? .05 : .2) - (narrow ? vw * .4 : vw * .25)).toFixed(1) + "px," + (-vh * .08).toFixed(1) + "px," + w.z + "px)";
+      });
+      intro.style.opacity = 1 - seg(q, .02, .09);
+      intro.style.transform = "translateY(-50%) scale(" + (1 + seg(q, 0, .09) * .5).toFixed(3) + ")";
+      hud.classList.toggle("is-on", q > .08 && q < .95);
+      numEl.textContent = String(active + 1).padStart(2, "0");
+      fileEl.textContent = items[active].data.file;
+      barEl.style.transform = "scaleX(" + seg(q, .06, .94).toFixed(3) + ")";
+      fade.style.opacity = seg(q, .93, 1);
+
+      // stars: dots that stretch into streaks with speed
+      var speed = clamp(Math.abs(cam - lastCam), 0, 260);
+      lastCam = cam;
+      var W = stars.width, H = stars.height, cx = W / 2, cy = H / 2;
+      ctx.clearRect(0, 0, W, H);
+      // corridor: rounded frames every 650px that we fly through
+      for (var zr = -300; zr > -(depth + 1600); zr -= 650) {
+        var er = zr + cam;
+        if (er > P - 80) continue;
+        var fr = P / (P - er);
+        var ar = clamp(1 - (-er) / 6500, 0, 1) * clamp((P - 80 - er) / 500, 0, 1) * 0.32;
+        if (ar <= 0.004) continue;
+        var hw = vw * (narrow ? .62 : .58) * fr * dpr, hh = vh * .6 * fr * dpr, rr = 40 * fr * dpr;
+        ctx.strokeStyle = "rgba(216,183,122," + ar.toFixed(3) + ")";
+        ctx.lineWidth = Math.max(1, 1.2 * fr) * dpr;
+        ctx.beginPath();
+        ctx.moveTo(cx - hw + rr, cy - hh);
+        ctx.arcTo(cx + hw, cy - hh, cx + hw, cy + hh, rr); ctx.arcTo(cx + hw, cy + hh, cx - hw, cy + hh, rr);
+        ctx.arcTo(cx - hw, cy + hh, cx - hw, cy - hh, rr); ctx.arcTo(cx - hw, cy - hh, cx + hw, cy - hh, rr);
+        ctx.closePath();
+        ctx.stroke();
+      }
+      for (var k = 0; k < pts.length; k++) {
+        var s = pts[k], z = s.z + cam;
+        if (z > P - 40) continue;
+        var f = P / (P - z), f2 = P / (P - z + speed * 2.2);
+        var px = cx + s.x * f * dpr, py = cy + s.y * f * dpr;
+        if (px < -50 || px > W + 50 || py < -50 || py > H + 50) continue;
+        var a = clamp(1 - (-z) / 5000, 0, 1) * (0.35 + s.g * 0.65);
+        ctx.strokeStyle = s.g > .82 ? "rgba(243,223,180," + a.toFixed(3) + ")" : "rgba(220,220,230," + (a * .6).toFixed(3) + ")";
+        ctx.lineWidth = (0.6 + f * 1.4) * dpr;
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(cx + s.x * f2 * dpr + 0.01, cy + s.y * f2 * dpr);
+        ctx.stroke();
+      }
+    }
+
+    function update() {
+      var r = track.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > window.innerHeight) return;
+      var target = clamp((window.scrollY - top) / len, 0, 1);
+      p = reduceMotion ? target : p + (target - p) * (lenis ? 0.2 : 0.12);
+      if (Math.abs(target - p) < 0.0002) p = target;
+      if (p === last) return;
+      last = p;
+      render(p);
+    }
+    measure();
+    return { measure: measure, update: update };
+  })();
+
   // ---------- Inside: exploded MacBook with HUD callouts ----------
   var inside = (function () {
     var track = document.getElementById("insideTrack");
@@ -757,6 +969,7 @@
 
     if (sites) sites.update(reduceMotion);
     if (inside) inside.update();
+    if (tunnel) tunnel.update();
 
     // manifesto words
     var mr = manifesto.getBoundingClientRect();
@@ -808,6 +1021,7 @@
     placeCases();
     if (sites) sites.measure();
     if (inside) inside.measure();
+    if (tunnel) tunnel.measure();
     if (!seq) return;
     seq.measure();
     seq.last = null;
