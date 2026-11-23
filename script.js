@@ -743,15 +743,15 @@
       });
     }, { threshold: 0.12 });
 
-    each("[data-split], .stat strong[data-count]", function (el) { revealObserver.observe(el); });
+    each("[data-split], .stat strong[data-count], .bigstat__num[data-count]", function (el) { revealObserver.observe(el); });
     each(".case", function (el) {
       el.classList.add("clip");
       revealObserver.observe(el);
     });
-    each(".label, .reveal-me, .stat, .svc__row, .rows li, .tile, .pr__item, .edu__list li, .contact__row, .footer__top", function (el) {
+    each(".label, .reveal-me, .stat, .bigstat, .svc__row, .rows li, .tile, .pr__item, .edu__list li, .contact__row, .footer__top", function (el) {
       // stagger siblings
       var idx = Array.prototype.indexOf.call(el.parentNode.children, el);
-      if (el.matches(".stat, .svc__row, .rows li, .tile, .pr__item, .edu__list li")) {
+      if (el.matches(".stat, .bigstat, .svc__row, .rows li, .tile, .pr__item, .edu__list li")) {
         el.style.setProperty("--d", (idx % 6) * 0.07 + "s");
       }
       el.classList.add("reveal");
@@ -976,7 +976,7 @@
     if (!el) return null;
     var CH = [["#seq", "Intro", "Начало"], ["#tunnel", "Through the code", "През кода"], ["#about", "Manifesto", "Манифест"],
       ["#inside", "What's inside", "Отвътре"], [".services", "Services", "Услуги"], ["#work", "Selected work", "Проекти"],
-      ["#sites", "Websites", "Сайтове"], ["#stack", "Stack", "Технологии"], [".principles", "Principles", "Принципи"],
+      ["#sites", "Websites", "Сайтове"], ["#statement", "In one line", "С едно изречение"], ["#stack", "Stack", "Технологии"], [".principles", "Principles", "Принципи"],
       [".edu", "Education", "Образование"], ["#contact", "Contact", "Контакт"]];
     var list = [];
     CH.forEach(function (c) { var n = document.querySelector(c[0]); if (n) list.push({ el: n, en: c[1], bg: c[2] }); });
@@ -1000,6 +1000,7 @@
 
   // ---------- One loop for everything scroll/pointer-linked ----------
   var progressBar = document.getElementById("progress");
+  var statement = document.getElementById("statement");
   var mwords = manifesto.querySelectorAll(".mw");
   var footerWord = document.querySelector(".footer__word");
   var seqP = seq ? seq.progress() : 0;
@@ -1031,6 +1032,10 @@
     }
 
     if (sites) sites.update(reduceMotion);
+    if (statement) {
+      var str = statement.getBoundingClientRect();
+      if (str.bottom > 0 && str.top < vh) statement.style.setProperty("--sp", clamp((vh - str.top) / (str.height + vh), 0, 1).toFixed(4));
+    }
     if (inside) inside.update();
     if (tunnel) tunnel.update();
 
