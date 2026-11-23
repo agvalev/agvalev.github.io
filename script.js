@@ -209,7 +209,11 @@
     function init3D() {
       if (hero3d || !window.MacBook3D) return;
       try {
-        hero3d = window.MacBook3D.createMacbook(document.getElementById("heroMac"), screen, { fov: 26 });
+        hero3d = window.MacBook3D.createMacbook(document.getElementById("heroMac"), screen, {
+          fov: 26,
+          // HDRI / fonts finished loading: draw the current frame again
+          onNeedsRender: function () { if (seq) seq.last = null; }
+        });
         root.classList.add("has-3d");
       } catch (e) { hero3d = null; }
     }
@@ -503,12 +507,15 @@
     var laptop = document.getElementById("laptop2");
     var phone = document.getElementById("phone");
     var glows = ["rgba(196, 255, 64, .2)", "rgba(216, 183, 122, .3)", "rgba(255, 98, 40, .24)",
-      "rgba(255, 212, 0, .22)", "rgba(214, 128, 64, .26)", "rgba(20, 184, 166, .26)"];
+      "rgba(255, 212, 0, .22)", "rgba(214, 128, 64, .26)", "rgba(222, 196, 160, .26)", "rgba(20, 184, 166, .26)"];
     var n = laptopShots.length, top = 0, len = 1, cur = -1, p = 0;
     var mac3d = null;
     on3D(function () {
       try {
-        mac3d = window.MacBook3D.createMacbook(document.getElementById("sitesMac"), laptop.querySelector(".screen"), { fov: 24 });
+        mac3d = window.MacBook3D.createMacbook(document.getElementById("sitesMac"), laptop.querySelector(".screen"), {
+          fov: 24,
+          onNeedsRender: function () { if (mac3d) renderMac(); }
+        });
         stageWrap.classList.add("has-mac3d");
         update(true);
         renderMac();
@@ -516,9 +523,9 @@
     });
     function renderMac() {
       var cam = mac3d.camera, t = Math.tan(cam.fov * Math.PI / 360);
-      var d = Math.max(36 / (0.94 * 2 * t * cam.aspect), 32 / (0.86 * 2 * t));
+      var d = Math.max(38 / (0.9 * 2 * t * cam.aspect), 34 / (0.78 * 2 * t));
       var az = lerp(-32, -16, p) * Math.PI / 180, el = 15 * Math.PI / 180;
-      var look = { x: 0, y: 11.5, z: -2 };
+      var look = { x: 0, y: 9.5, z: -1 };
       mac3d.render({
         lid: -0.32,
         pos: { x: look.x + Math.sin(az) * Math.cos(el) * d, y: look.y + Math.sin(el) * d, z: look.z + Math.cos(az) * Math.cos(el) * d },

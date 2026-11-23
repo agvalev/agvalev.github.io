@@ -199,6 +199,13 @@
 .mb3d__gl, .mb3d__css { position: absolute; inset: 0; }
 .has-3d .seq .stage, .has-mac3d .device-laptop { display: none; }
 .mb3d .screen { height: auto; }
+/* MacBook Pro display: rounded top corners, notch with camera */
+.screen.is-3d { border-radius: 30px 30px 7px 7px; }
+.screen.is-3d .notch { width: 10.6%; height: 4.2%; border-radius: 0 0 16px 16px; background: #000; }
+.screen.is-3d .notch::after {
+  content: ""; position: absolute; left: 50%; top: 42%; width: 9px; height: 9px; border-radius: 50%; transform: translate(-50%, -50%);
+  background: radial-gradient(circle at 35% 35%, #2a3550, #07080c 60%); box-shadow: 0 0 0 2px #0b0b0d;
+}
 
 /* Static fallback (reduced motion) */
 .seq--static { height: 100vh; height: 100svh; }
@@ -243,7 +250,7 @@
 /* ---------- Websites showcase: MacBook + iPhone ---------- */
 .sites { padding-top: 120px; }
 .sites .head { margin-bottom: 0; }
-.sites__track { position: relative; height: calc(6 * 75vh + 100vh); }
+.sites__track { position: relative; height: calc(7 * 75vh + 100vh); }
 .sites__sticky { position: sticky; top: 0; height: 100vh; height: 100svh; display: flex; align-items: center; overflow: hidden; }
 .sites__grid { display: grid; grid-template-columns: .78fr 1.22fr; gap: 40px; align-items: center; }
 .sites__count { display: flex; align-items: center; gap: 14px; margin-bottom: 28px; font-family: var(--mono); font-size: 12px; letter-spacing: .14em; color: var(--muted); }
@@ -314,7 +321,7 @@
 .phone__island { position: absolute; z-index: 5; top: 2.1%; left: 50%; width: 32%; height: 3.3%; border-radius: 99px; background: #000; transform: translateX(-50%); }
 
 @media (max-width: 860px) {
-  .sites__track { height: calc(6 * 70vh + 100vh); }
+  .sites__track { height: calc(7 * 70vh + 100vh); }
   .sites__grid { grid-template-columns: 1fr; gap: 8px; align-content: center; }
   .sites__list { margin-bottom: 14px; }
   .sites__list li:not(:has(.is-on)) { display: none; }
