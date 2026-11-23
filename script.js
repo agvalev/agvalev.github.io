@@ -860,7 +860,7 @@
     var glows = ["rgba(196, 255, 64, .2)", "rgba(216, 183, 122, .3)", "rgba(255, 98, 40, .24)",
       "rgba(255, 212, 0, .22)", "rgba(214, 128, 64, .26)", "rgba(222, 196, 160, .26)", "rgba(20, 184, 166, .26)"];
     var n = laptopShots.length, top = 0, len = 1, cur = -1, p = 0;
-    var mac3d = null, ph3d = null, lastLocal = 0, D2R = Math.PI / 180;
+    var mac3d = null, ph3d = null, lastLocal = 0, lastP = -1, D2R = Math.PI / 180;
     on3D(function () {
       try {
         mac3d = window.MacBook3D.createMacbook(document.getElementById("sitesMac"), laptop.querySelector(".screen"), {
@@ -877,6 +877,7 @@
             stageWrap.classList.add("has-phone3d");
           } catch (e2) { ph3d = null; }
         }
+        lastP = -1;
         update(true);
         renderMac();
       } catch (e) { mac3d = null; }
@@ -927,6 +928,8 @@
       var target = clamp((window.scrollY - top) / len, 0, 1);
       p = instant ? target : p + (target - p) * (lenis ? 0.22 : 0.14);
       if (Math.abs(target - p) < 0.0003) p = target;
+      if (p === lastP) return;           // nothing moved: skip both WebGL renders
+      lastP = p;
       var x = p * n, i = Math.min(n - 1, Math.floor(x)), local = Math.min(1, x - i);
       setActive(i);
       browse(laptopShots[i], local);
@@ -1034,7 +1037,9 @@
     if (sites) sites.update(reduceMotion);
     if (statement) {
       var str = statement.getBoundingClientRect();
-      if (str.bottom > 0 && str.top < vh) statement.style.setProperty("--sp", clamp((vh - str.top) / (str.height + vh), 0, 1).toFixed(4));
+      var stVis = str.bottom > 0 && str.top < vh;
+      statement.classList.toggle("is-vis", stVis);
+      if (stVis) statement.style.setProperty("--sp", clamp((vh - str.top) / (str.height + vh), 0, 1).toFixed(4));
     }
     if (inside) inside.update();
     if (tunnel) tunnel.update();

@@ -502,6 +502,7 @@
   -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 1.5px), #000 calc(100% - 1px));
   mask: radial-gradient(farthest-side, transparent calc(100% - 1.5px), #000 calc(100% - 1px)); }
 .ring:nth-child(even) { animation-direction: reverse; }
+.statement:not(.is-vis) .ring { animation-play-state: paused; }
 @keyframes ringSpin { to { transform: rotate(360deg); } }
 .statement::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
   background: radial-gradient(ellipse at 50% 45%, rgba(216, 183, 122, .09), transparent 55%), linear-gradient(var(--bg), transparent 18%, transparent 82%, var(--bg)); }
