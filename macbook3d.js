@@ -590,5 +590,177 @@ export function createMacbook(host, screenEl, opts = {}) {
   return { render, resize, screenInfo, coverDistance, setExplode, project, camera, DIM };
 }
 
-window.MacBook3D = { createMacbook };
+// ---------------------------------------------------------------------------------------------
+// Photorealistic iPhone 15 Pro (natural titanium). Same idea as the MacBook: real dimensions,
+// HDRI reflections, and the display is a live DOM element placed on the glass with CSS3DRenderer.
+const PH = {
+  W: 7.06, H: 14.66, T: 0.825,   // body (cm)
+  R: 1.0,                        // corner radius seen from the front
+  SW: 6.46,                      // display width
+  SR: 0.9                        // display corner radius
+};
+const PHONE_PX = { w: 393, h: 852 }; // iPhone 15 Pro viewport in points
+PH.SH = PH.SW * PHONE_PX.h / PHONE_PX.w;
+
+export function createIphone(host, screenEl, opts = {}) {
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.AgXToneMapping;
+  renderer.toneMappingExposure = opts.exposure || 0.95;
+  renderer.domElement.className = "ph3d__gl";
+  host.appendChild(renderer.domElement);
+  const css = new CSS3DRenderer();
+  css.domElement.className = "ph3d__css";
+  host.appendChild(css.domElement);
+
+  const scene = new THREE.Scene();
+  const cssScene = new THREE.Scene();
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+  new RGBELoader().load(HDRI, (hdr) => {
+    scene.environment = pmrem.fromEquirectangular(hdr).texture;
+    hdr.dispose();
+    if (opts.onNeedsRender) opts.onNeedsRender();
+  });
+  const camera = new THREE.PerspectiveCamera(opts.fov || 18, 1, 0.5, 2000);
+  const { W, H, T, R, SW, SR } = PH;
+
+  // ----- materials
+  // brushed natural titanium: warm grey metal with a fine satin finish
+  const ti = new THREE.MeshPhysicalMaterial({ color: 0xa39d94, metalness: 1, roughness: 0.32, envMapIntensity: 0.6 });
+  const band = new THREE.MeshStandardMaterial({ color: 0x55524d, metalness: 0, roughness: 0.7, envMapIntensity: 0.2 });
+  const frontGlass = new THREE.MeshPhysicalMaterial({ color: 0x020203, roughness: 0.04, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.02, envMapIntensity: 0.6 });
+  // textured matte back glass, tinted to match the titanium
+  const backGlass = new THREE.MeshPhysicalMaterial({ color: 0x8e8a84, roughness: 0.62, metalness: 0, clearcoat: 0.25, clearcoatRoughness: 0.5, envMapIntensity: 0.5 });
+  const black = new THREE.MeshStandardMaterial({ color: 0x050506, roughness: 0.6, envMapIntensity: 0.1 });
+  const lensGlass = new THREE.MeshPhysicalMaterial({ color: 0x05060a, roughness: 0.02, clearcoat: 1, clearcoatRoughness: 0.01, iridescence: 0.6, iridescenceIOR: 1.6, envMapIntensity: 1.1 });
+
+  const root = new THREE.Group();
+  scene.add(root);
+
+  // ----- titanium band with milled edges
+  const bodyGeo = slab(W, H, T, R, 0.16);
+  bodyGeo.translate(0, 0, -T / 2);
+  root.add(new THREE.Mesh(bodyGeo, ti));
+
+  // front: one sheet of black glass, the display sits on it
+  const front = plate(W - 0.2, H - 0.2, R - 0.1, frontGlass);
+  front.position.z = T / 2 + 0.003;
+  root.add(front);
+  const anchor = new THREE.Object3D();
+  anchor.position.z = T / 2 + 0.006;
+  root.add(anchor);
+
+  // back: frosted glass + camera plateau with three lenses, flash and LiDAR
+  const back = plate(W - 0.2, H - 0.2, R - 0.1, backGlass);
+  back.rotation.y = Math.PI;
+  back.position.z = -T / 2 - 0.003;
+  root.add(back);
+  const plateau = new THREE.Mesh(slab(3.62, 3.62, 0.17, 0.78, 0.06), backGlass);
+  plateau.rotation.y = Math.PI;
+  // seen from the back the camera sits top-left, i.e. top-right in front coordinates
+  const px = W / 2 - 0.32 - 1.81, py = H / 2 - 0.32 - 1.81;
+  plateau.position.set(px, py, -T / 2);
+  root.add(plateau);
+  const lensSpots = [[-0.82, 0.82], [-0.82, -0.82], [0.86, 0], [0.86, 1.08], [0.86, -1.08]];
+  lensSpots.forEach(([lx, ly], k) => {
+    const g = new THREE.Group();
+    if (k < 3) {
+      const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.66, 0.68, 0.16, 48), ti);
+      ring.rotation.x = Math.PI / 2;
+      const glassDisc = new THREE.Mesh(new THREE.CylinderGeometry(0.56, 0.56, 0.17, 48), lensGlass);
+      glassDisc.rotation.x = Math.PI / 2;
+      const inner = new THREE.Mesh(new THREE.CircleGeometry(0.24, 32), black);
+      inner.rotation.y = Math.PI; inner.position.z = -0.09;
+      g.add(ring, glassDisc, inner);
+    } else {
+      const dot = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.04, 32), k === 3 ? backGlass : black);
+      dot.rotation.x = Math.PI / 2;
+      g.add(dot);
+    }
+    g.position.set(px - lx, py + ly, -T / 2 - 0.17 - (k < 3 ? 0.06 : 0.01));
+    root.add(g);
+  });
+
+  // ----- buttons: action + volume on the left, side button on the right
+  const btn = (x, y, len) => {
+    const m = new THREE.Mesh(new RoundedBoxGeometry(0.12, len, 0.3, 3, 0.05), ti);
+    m.position.set(x, y, 0);
+    root.add(m);
+  };
+  btn(-W / 2 - 0.03, H / 2 - 3.05, 0.62);   // action button
+  btn(-W / 2 - 0.03, H / 2 - 4.2, 1.05);    // volume up
+  btn(-W / 2 - 0.03, H / 2 - 5.55, 1.05);   // volume down
+  btn(W / 2 + 0.03, H / 2 - 4.9, 1.7);      // side button
+
+  // antenna bands cut through the titanium
+  const bandMesh = (x, y, rotZ) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.24, T * 0.86), band);
+    m.position.set(x, y, 0); m.rotation.z = rotZ;
+    root.add(m);
+  };
+  bandMesh(-W / 2 + 0.05, H / 2 - 1.35, 0); bandMesh(W / 2 - 0.05, H / 2 - 1.35, 0);
+  bandMesh(-W / 2 + 0.05, -H / 2 + 1.35, 0); bandMesh(W / 2 - 0.05, -H / 2 + 1.35, 0);
+  bandMesh(1.6, H / 2 - 0.05, Math.PI / 2); bandMesh(-1.6, -H / 2 + 0.05, Math.PI / 2);
+
+  // bottom edge: USB-C port and speaker / mic holes
+  const port = new THREE.Mesh(new RoundedBoxGeometry(0.9, 0.08, 0.3, 3, 0.1), black);
+  port.position.set(0, -H / 2, 0);
+  root.add(port);
+  const holeGeo = new THREE.CylinderGeometry(0.045, 0.045, 0.06, 12);
+  for (let k = 0; k < 6; k++) {
+    for (const side of [-1, 1]) {
+      if (side < 0 && k > 3) continue;
+      const hole = new THREE.Mesh(holeGeo, black);
+      hole.position.set(side * (0.85 + k * 0.17), -H / 2 - 0.005, 0);
+      root.add(hole);
+    }
+  }
+
+  // ----- display (DOM)
+  screenEl.style.width = PHONE_PX.w + "px";
+  screenEl.style.height = PHONE_PX.h + "px";
+  screenEl.style.borderRadius = (SR / SW * PHONE_PX.w).toFixed(1) + "px";
+  screenEl.style.backfaceVisibility = "hidden";
+  const cssObj = new CSS3DObject(screenEl);
+  cssObj.matrixAutoUpdate = false;
+  cssScene.add(cssObj);
+  const pxScale = SW / PHONE_PX.w;
+  const scaleM = new THREE.Matrix4().makeScale(pxScale, pxScale, pxScale);
+
+  function resize() {
+    const r = host.getBoundingClientRect();
+    const w = Math.max(1, Math.round(r.width)), h = Math.max(1, Math.round(r.height));
+    renderer.setSize(w, h);
+    css.setSize(w, h);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  resize();
+
+  // state: { rx, ry, rz (radians), y (cm), fill (share of the view height the phone takes) }
+  const nrm = new THREE.Vector3(), camDir = new THREE.Vector3();
+  function render(state) {
+    const t = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+    const fill = state.fill || 0.78;
+    const d = Math.max((H / 2) / (fill * t), (W / 2) / (0.8 * t * camera.aspect));
+    camera.position.set(0, 0, d);
+    camera.lookAt(0, 0, 0);
+    root.rotation.set(state.rx || 0, state.ry || 0, state.rz || 0, "YXZ");
+    root.position.y = state.y || 0;
+    root.updateMatrixWorld(true);
+    cssObj.matrix.copy(anchor.matrixWorld).multiply(scaleM);
+    cssObj.matrixWorldNeedsUpdate = true;
+    // hide the DOM display whenever the back of the phone faces the camera
+    nrm.set(0, 0, 1).applyQuaternion(root.quaternion);
+    camDir.copy(camera.position).sub(root.position).normalize();
+    screenEl.style.visibility = nrm.dot(camDir) > 0.02 ? "visible" : "hidden";
+    renderer.render(scene, camera);
+    css.render(cssScene, camera);
+  }
+  return { render, resize, camera, DIM: PH };
+}
+
+window.MacBook3D = { createMacbook, createIphone };
 window.dispatchEvent(new Event("macbook3d-ready"));

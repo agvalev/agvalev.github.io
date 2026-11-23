@@ -843,7 +843,7 @@
     var glows = ["rgba(196, 255, 64, .2)", "rgba(216, 183, 122, .3)", "rgba(255, 98, 40, .24)",
       "rgba(255, 212, 0, .22)", "rgba(214, 128, 64, .26)", "rgba(222, 196, 160, .26)", "rgba(20, 184, 166, .26)"];
     var n = laptopShots.length, top = 0, len = 1, cur = -1, p = 0;
-    var mac3d = null;
+    var mac3d = null, ph3d = null, lastLocal = 0, D2R = Math.PI / 180;
     on3D(function () {
       try {
         mac3d = window.MacBook3D.createMacbook(document.getElementById("sitesMac"), laptop.querySelector(".screen"), {
@@ -851,6 +851,15 @@
           onNeedsRender: function () { if (mac3d) renderMac(); }
         });
         stageWrap.classList.add("has-mac3d");
+        if (window.MacBook3D.createIphone) {
+          try {
+            ph3d = window.MacBook3D.createIphone(document.getElementById("sitesPhone"), phone.querySelector(".phone__screen"), {
+              fov: 18,
+              onNeedsRender: function () { if (ph3d) renderPhone(); }
+            });
+            stageWrap.classList.add("has-phone3d");
+          } catch (e2) { ph3d = null; }
+        }
         update(true);
         renderMac();
       } catch (e) { mac3d = null; }
@@ -871,6 +880,12 @@
       top = track.getBoundingClientRect().top + window.scrollY;
       len = Math.max(1, track.offsetHeight - window.innerHeight);
       if (mac3d) { mac3d.resize(); renderMac(); }
+      if (ph3d) { ph3d.resize(); renderPhone(); }
+    }
+    // the titanium iPhone turns slowly with the scroll and lifts a little for every site
+    function renderPhone() {
+      var bob = Math.sin(lastLocal * Math.PI);
+      ph3d.render({ ry: (-30 + p * 16 + bob * 6) * D2R, rx: (5 - bob * 2) * D2R, rz: 2 * D2R, y: bob * 0.35, fill: .8 });
     }
     function mark(list, i) {
       for (var k = 0; k < list.length; k++) list[k].classList.toggle("is-on", k === i);
@@ -900,8 +915,10 @@
       browse(laptopShots[i], local);
       browse(phoneShots[i], local);
       count.style.setProperty("--sp", ((i + local) / n).toFixed(3));
+      lastLocal = local;
       if (mac3d) renderMac();
-      if (!instant) {
+      if (ph3d) renderPhone();
+      if (!instant && !ph3d) {
         laptop.style.transform = "rotateX(" + (-15 + p * 5).toFixed(2) + "deg) rotateY(" + (-22 + p * 12).toFixed(2) + "deg)";
         phone.style.transform = "translateY(" + (-Math.sin(local * Math.PI) * 14).toFixed(1) +
           "px) rotateY(" + (-24 + p * 10).toFixed(2) + "deg) rotateX(6deg) rotateZ(1deg)";

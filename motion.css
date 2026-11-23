@@ -318,6 +318,12 @@
 .phone__btn--c { right: -2px; top: 26%; height: 15%; }
 .phone__screen { position: relative; height: 100%; border-radius: calc(var(--pw) * .145); overflow: hidden; background: #000; }
 .phone__screen::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; background: linear-gradient(120deg, rgba(255, 255, 255, .12), transparent 32%); }
+.ph3d { position: absolute; left: -45%; right: -45%; top: -14%; bottom: -14%; z-index: 3; pointer-events: none; }
+.ph3d__gl, .ph3d__css { position: absolute; inset: 0; }
+.ph3d__gl { filter: drop-shadow(0 34px 40px rgba(0, 0, 0, .75)) drop-shadow(0 8px 12px rgba(0, 0, 0, .5)); }
+.has-phone3d .phone { background: none; box-shadow: none; padding: 0; transform: none !important; }
+.has-phone3d .phone__btn { display: none; }
+.ph3d .phone__island { top: 1.3%; height: 4.3%; }
 .phone__island { position: absolute; z-index: 5; top: 2.1%; left: 50%; width: 32%; height: 3.3%; border-radius: 99px; background: #000; transform: translateX(-50%); }
 
 @media (max-width: 860px) {
