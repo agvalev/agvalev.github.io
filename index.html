@@ -165,6 +165,8 @@
           </div>
         </div>
 
+        <div class="mb3d" id="heroMac" aria-hidden="true"></div>
+
         <div class="seq__fade" aria-hidden="true"></div>
       </div>
     </section>
@@ -443,6 +445,7 @@
             </div>
 
             <div class="sites__stage" id="sitesStage" aria-hidden="true">
+              <div class="mb3d" id="sitesMac"></div>
               <div class="device-laptop">
                 <div class="stage" id="laptop2">
                   <div class="lid">
@@ -631,7 +634,46 @@
     <div class="footer__word" aria-hidden="true"><span>Anatoli</span><em>Valev</em></div>
   </footer>
 
+  <!-- Contact sheet: mailto alone does nothing on machines without a mail app -->
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" aria-hidden="true">
+    <div class="sheet__backdrop" data-close></div>
+    <div class="sheet__panel">
+      <button class="sheet__x" type="button" data-close aria-label="Close / Затвори"><span></span><span></span></button>
+      <p class="label"><span class="label__num">(✉)</span> <span lang="en">Start a project</span><span lang="bg">Започни проект</span></p>
+      <h3 class="sheet__title" id="sheetTitle">
+        <span lang="en">Let's talk about <em>your idea.</em></span>
+        <span lang="bg">Да поговорим за <em>твоята идея.</em></span>
+      </h3>
+      <p class="sheet__mail">anatoligvalev@gmail.com</p>
+      <div class="sheet__opts">
+        <a class="sheet__opt" href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;to=anatoligvalev@gmail.com&amp;su=Project%20inquiry" target="_blank" rel="noopener">
+          <span class="sheet__ico">G</span>
+          <span><b lang="en">Write in Gmail</b><b lang="bg">Пиши в Gmail</b><small lang="en">Opens a new message in your browser</small><small lang="bg">Отваря ново съобщение в браузъра</small></span>
+          <i aria-hidden="true">↗</i>
+        </a>
+        <a class="sheet__opt" href="mailto:anatoligvalev@gmail.com?subject=Project%20inquiry" data-direct>
+          <span class="sheet__ico">@</span>
+          <span><b lang="en">Use my email app</b><b lang="bg">През имейл приложение</b><small lang="en">Outlook, Apple Mail, Thunderbird…</small><small lang="bg">Outlook, Apple Mail, Thunderbird…</small></span>
+          <i aria-hidden="true">↗</i>
+        </a>
+        <button class="sheet__opt" id="sheetCopy" type="button">
+          <span class="sheet__ico">⧉</span>
+          <span><b class="copy-label"><span lang="en">Copy the address</span><span lang="bg">Копирай адреса</span></b><b class="copy-done"><span lang="en">Copied ✓</span><span lang="bg">Копирано ✓</span></b><small lang="en">Paste it anywhere you like</small><small lang="bg">Постави го където ти е удобно</small></span>
+          <i aria-hidden="true">→</i>
+        </button>
+      </div>
+      <p class="sheet__note"><span lang="en">I reply to every message personally.</span><span lang="bg">Отговарям лично на всяко съобщение.</span></p>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
   <script src="script.js"></script>
+  <script type="importmap">
+    { "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    } }
+  </script>
+  <script type="module" src="macbook3d.js"></script>
 </body>
 </html>

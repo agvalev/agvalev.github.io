@@ -194,6 +194,12 @@
   background: radial-gradient(closest-side, rgba(0, 0, 0, .7), transparent); filter: blur(12px);
 }
 
+/* WebGL MacBook (macbook3d.js) replaces the CSS laptop once it loads */
+.mb3d { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.mb3d__gl, .mb3d__css { position: absolute; inset: 0; }
+.has-3d .seq .stage, .has-mac3d .device-laptop { display: none; }
+.mb3d .screen { height: auto; }
+
 /* Static fallback (reduced motion) */
 .seq--static { height: 100vh; height: 100svh; }
 .seq--static .seq__sticky { position: relative; }

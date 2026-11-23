@@ -82,6 +82,12 @@
     setMenu(!navLinks.classList.contains("is-open"));
   });
 
+  // run fn once macbook3d.js (an ES module, loads after this script) is ready
+  function on3D(fn) {
+    if (window.MacBook3D) fn();
+    else window.addEventListener("macbook3d-ready", fn, { once: true });
+  }
+
   // ---------- Laptop keyboards (flex-grow per key) ----------
   var KEY_ROWS = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -195,6 +201,37 @@
       var sw = screen.offsetWidth, sh = screen.offsetHeight;
       zoomScale = Math.max(window.innerWidth / sw, vh / sh) * 1.04;
       screenDy = screen.offsetTop + sh / 2 - stage.offsetHeight / 2;
+      if (hero3d) hero3d.resize();
+    }
+
+    // Realistic WebGL MacBook (macbook3d.js); the CSS laptop above stays as the fallback
+    var hero3d = null;
+    function init3D() {
+      if (hero3d || !window.MacBook3D) return;
+      try {
+        hero3d = window.MacBook3D.createMacbook(document.getElementById("heroMac"), screen, { fov: 26 });
+        root.classList.add("has-3d");
+      } catch (e) { hero3d = null; }
+    }
+    function render3D(open, rise, push, zoom, deep) {
+      var cam = hero3d.camera, t = Math.tan(cam.fov * Math.PI / 360);
+      // distance that keeps the open laptop comfortably in frame on any aspect ratio
+      var dist = Math.max(34 / (0.74 * 2 * t * cam.aspect), 30 / (0.6 * 2 * t));
+      var lidRad = lerp(1.555, -0.3, open);
+      // orbit: closed under the title, then open, then pushed in
+      var elev = lerp(lerp(34, 17, rise), 9, push) * Math.PI / 180;
+      var d = dist * lerp(lerp(1.05, 1, rise), 0.84, push);
+      var ly = lerp(lerp(13, 11, rise), 12, push), lz = lerp(lerp(0, -3, rise), -6, push);
+      var pos = { x: 0, y: ly + Math.sin(elev) * d, z: lz + Math.cos(elev) * d };
+      var look = { x: 0, y: ly, z: lz };
+      if (zoom > 0) {
+        // fly along the screen normal until the display covers the viewport, then keep going
+        var S = hero3d.screenInfo(lidRad);
+        var dc = hero3d.coverDistance() * 0.985 / Math.pow(2.8, deep);
+        pos = { x: lerp(pos.x, S.pos.x + S.n.x * dc, zoom), y: lerp(pos.y, S.pos.y + S.n.y * dc, zoom), z: lerp(pos.z, S.pos.z + S.n.z * dc, zoom) };
+        look = { x: lerp(look.x, S.pos.x, zoom), y: lerp(look.y, S.pos.y, zoom), z: lerp(look.z, S.pos.z, zoom) };
+      }
+      hero3d.render({ lid: lidRad, pos: pos, look: look });
     }
 
     function render(p) {
@@ -223,16 +260,8 @@
       for (var c = 0; c < corners.length; c++) corners[c].style.opacity = chrome;
 
       // Laptop: rise, open, push in, then dive into the screen
-      var lidAngle = lerp(-89, 12, open) - 12 * zoom;
-      var tilt = lerp(lerp(lerp(-32, -20, rise), -12, push), 0, zoom);
-      var s0 = lerp(lerp(.72, .9, rise), 1, push);
-      // zoom fills the viewport with the screen, deep keeps diving into the code
-      var scale = s0 * Math.pow(zoomScale / s0, zoom) * Math.pow(2.8, deep);
-      var lift = window.innerHeight > window.innerWidth * 1.2 ? .08 : 0; // portrait phones: sit higher
-      var ty = lerp(lerp(lerp(vh * .05, vh * (.1 - lift), rise), vh * (.07 - lift), push), -screenDy * scale, zoom);
-      stage.style.transform = "translate3d(0," + ty + "px,0) scale3d(" + scale + "," + scale + "," + scale +
-        ") rotateX(" + tilt + "deg)";
-      lid.style.transform = "translateY(-2px) rotateX(" + lidAngle + "deg)";
+      if (hero3d) render3D(open, rise, push, zoom, deep);
+      else renderCss(open, rise, push, zoom, deep);
 
       // Screen: boot logo, then editor, typing and terminal
       boot.style.opacity = Math.min(seg(bootT, 0, .2), 1 - ideT);
@@ -257,18 +286,34 @@
       fade.style.opacity = seg(p, .9, 1);
     }
 
+    function renderCss(open, rise, push, zoom, deep) {
+      var lidAngle = lerp(-89, 12, open) - 12 * zoom;
+      var tilt = lerp(lerp(lerp(-32, -20, rise), -12, push), 0, zoom);
+      var s0 = lerp(lerp(.72, .9, rise), 1, push);
+      // zoom fills the viewport with the screen, deep keeps diving into the code
+      var scale = s0 * Math.pow(zoomScale / s0, zoom) * Math.pow(2.8, deep);
+      var lift = window.innerHeight > window.innerWidth * 1.2 ? .08 : 0; // portrait phones: sit higher
+      var ty = lerp(lerp(lerp(vh * .05, vh * (.1 - lift), rise), vh * (.07 - lift), push), -screenDy * scale, zoom);
+      stage.style.transform = "translate3d(0," + ty + "px,0) scale3d(" + scale + "," + scale + "," + scale +
+        ") rotateX(" + tilt + "deg)";
+      lid.style.transform = "translateY(-2px) rotateX(" + lidAngle + "deg)";
+    }
+
     function progress() { return clamp((window.scrollY - top) / len, 0, 1); }
 
     if (reduceMotion) {
       sec.classList.add("seq--static");
       measure();
       render(.63);
+      on3D(function () { init3D(); measure(); render(.63); });
       return null;
     }
 
     measure();
-    return { measure: measure, render: render, progress: progress };
+    return { measure: measure, render: render, progress: progress, init3D: init3D };
   })();
+
+  if (seq) on3D(function () { seq.init3D(); seq.measure(); seq.last = null; });
 
   // ---------- Split headings into words ----------
   function wrapWords(el, make) {
@@ -460,10 +505,31 @@
     var glows = ["rgba(196, 255, 64, .2)", "rgba(216, 183, 122, .3)", "rgba(255, 98, 40, .24)",
       "rgba(255, 212, 0, .22)", "rgba(214, 128, 64, .26)", "rgba(20, 184, 166, .26)"];
     var n = laptopShots.length, top = 0, len = 1, cur = -1, p = 0;
+    var mac3d = null;
+    on3D(function () {
+      try {
+        mac3d = window.MacBook3D.createMacbook(document.getElementById("sitesMac"), laptop.querySelector(".screen"), { fov: 24 });
+        stageWrap.classList.add("has-mac3d");
+        update(true);
+        renderMac();
+      } catch (e) { mac3d = null; }
+    });
+    function renderMac() {
+      var cam = mac3d.camera, t = Math.tan(cam.fov * Math.PI / 360);
+      var d = Math.max(36 / (0.94 * 2 * t * cam.aspect), 32 / (0.86 * 2 * t));
+      var az = lerp(-32, -16, p) * Math.PI / 180, el = 15 * Math.PI / 180;
+      var look = { x: 0, y: 11.5, z: -2 };
+      mac3d.render({
+        lid: -0.32,
+        pos: { x: look.x + Math.sin(az) * Math.cos(el) * d, y: look.y + Math.sin(el) * d, z: look.z + Math.cos(az) * Math.cos(el) * d },
+        look: look
+      });
+    }
 
     function measure() {
       top = track.getBoundingClientRect().top + window.scrollY;
       len = Math.max(1, track.offsetHeight - window.innerHeight);
+      if (mac3d) { mac3d.resize(); renderMac(); }
     }
     function mark(list, i) {
       for (var k = 0; k < list.length; k++) list[k].classList.toggle("is-on", k === i);
@@ -493,6 +559,7 @@
       browse(laptopShots[i], local);
       browse(phoneShots[i], local);
       count.style.setProperty("--sp", ((i + local) / n).toFixed(3));
+      if (mac3d) renderMac();
       if (!instant) {
         laptop.style.transform = "rotateX(" + (-15 + p * 5).toFixed(2) + "deg) rotateY(" + (-22 + p * 12).toFixed(2) + "deg)";
         phone.style.transform = "translateY(" + (-Math.sin(local * Math.PI) * 14).toFixed(1) +
@@ -626,6 +693,45 @@
   }
   tickClock();
   setInterval(tickClock, 15000);
+
+  // ---------- Contact sheet (every mailto link opens it) ----------
+  var sheet = document.getElementById("sheet");
+  var sheetReturn = null;
+  function openSheet() {
+    sheetReturn = document.activeElement;
+    sheet.classList.add("is-open");
+    sheet.setAttribute("aria-hidden", "false");
+    if (lenis) lenis.stop();
+    setTimeout(function () { sheet.querySelector(".sheet__opt").focus({ preventScroll: true }); }, 50);
+  }
+  function closeSheet() {
+    if (!sheet.classList.contains("is-open")) return;
+    sheet.classList.remove("is-open");
+    sheet.setAttribute("aria-hidden", "true");
+    if (lenis) lenis.start();
+    if (sheetReturn && sheetReturn.focus) sheetReturn.focus({ preventScroll: true });
+  }
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest('a[href^="mailto:"]');
+    if (a && !a.hasAttribute("data-direct")) {
+      e.preventDefault();
+      openSheet();
+      return;
+    }
+    if (e.target.closest("[data-close]")) closeSheet();
+    if (e.target.closest("#sheet .sheet__opt[href]")) setTimeout(closeSheet, 300);
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeSheet();
+  });
+  var sheetCopy = document.getElementById("sheetCopy");
+  sheetCopy.addEventListener("click", function () {
+    var done = function () {
+      sheetCopy.classList.add("is-copied");
+      setTimeout(function () { sheetCopy.classList.remove("is-copied"); }, 1800);
+    };
+    if (navigator.clipboard) navigator.clipboard.writeText("anatoligvalev@gmail.com").then(done, function () {});
+  });
 
   // ---------- Copy email ----------
   var copyBtn = document.getElementById("copyBtn");

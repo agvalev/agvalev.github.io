@@ -18,6 +18,7 @@ Open http://localhost:5500
 | `index.html` | All content. Every text exists twice: `<span lang="en">` and `<span lang="bg">`. |
 | `styles.css` | Design tokens (colours on `:root`), layout, responsive rules |
 | `motion.css` | Preloader, grain, 3D laptop intro, websites showcase (MacBook + iPhone), split-text reveals, marquee |
+| `macbook3d.js` | Realistic WebGL MacBook (Three.js from a CDN). The screen is a real DOM element on the lid (CSS3DRenderer). If WebGL is unavailable, the CSS laptop in `motion.css` is used instead. |
 | `script.js` | Preloader, smooth scroll, laptop sequence, manifesto, case studies, trading chart, websites showcase, reveals, clock |
 | `assets/img/` | App screenshot (WebP) |
 | `assets/sites/` | Full-page screenshots of each website: `<name>-d.webp` (desktop, 1200px) and `<name>-m.webp` (mobile, 520px) |
