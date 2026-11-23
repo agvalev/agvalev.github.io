@@ -319,6 +319,128 @@
 
   if (seq) on3D(function () { seq.init3D(); seq.measure(); seq.last = null; });
 
+  // ---------- Inside: exploded MacBook with HUD callouts ----------
+  var inside = (function () {
+    var track = document.getElementById("insideTrack");
+    if (!track) return null;
+    var host = document.getElementById("insideMac");
+    var head = track.querySelector(".inside__head");
+    var cos = Array.prototype.map.call(track.querySelectorAll(".co"), function (el) {
+      return { el: el, anchor: el.dataset.anchor };
+    });
+    var mac = null, top = 0, len = 1, p = 0, last = -1;
+
+    // callout boxes line up in two columns (like Apple's exploded views); leader lines run to the parts
+    var NS = "http://www.w3.org/2000/svg";
+    var svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("class", "co__svg");
+    track.querySelector(".callouts").prepend(svg);
+    cos.forEach(function (c) {
+      c.dot = c.el.querySelector(".co__dot");
+      c.box = c.el.querySelector(".co__box");
+      c.path = document.createElementNS(NS, "path");
+      c.path.setAttribute("pathLength", "1");
+      svg.appendChild(c.path);
+    });
+
+    function layoutCallouts(q, ex) {
+      var W = host.clientWidth, H = host.clientHeight, narrow = W < 860;
+      var boxW = narrow ? 168 : 250, boxH = narrow ? 58 : 118, gap = narrow ? 8 : 16, margin = narrow ? 12 : W * 0.045;
+      var cols = [[], []];
+      // phones: one callout at a time, as a caption under the model
+      var current = -1;
+      cos.forEach(function (c, i) { if (ex > .96 && q > .44 + i * .045 && q < .84) current = i; });
+      cos.forEach(function (c, i) {
+        var show = narrow ? i === current : ex > .96 && q > .44 + i * .045 && q < .84;
+        c.el.classList.toggle("is-on", show);
+        c.path.classList.toggle("is-on", show);
+        c.pt = mac.project(c.anchor);
+        if (narrow) {
+          var bw = W - 24, bh = c.box.offsetHeight || 110;
+          c.box.style.left = "12px";
+          c.box.style.top = (H - bh - 28) + "px";
+          c.box.style.width = bw + "px";
+          c.dot.style.left = c.pt.x + "px";
+          c.dot.style.top = c.pt.y + "px";
+          c.path.setAttribute("d", "M" + c.pt.x.toFixed(1) + " " + c.pt.y.toFixed(1) + " L" + c.pt.x.toFixed(1) + " " + (H - bh - 28).toFixed(1));
+          return;
+        }
+        c.box.style.width = "";
+        cols[c.pt.x < W / 2 ? 0 : 1].push(c);
+      });
+      cols.forEach(function (col, side) {
+        col.sort(function (a, b) { return a.pt.y - b.pt.y; });
+        var total = col.length * boxH + Math.max(0, col.length - 1) * gap;
+        var y0 = clamp(H * 0.58 - total / 2, H * 0.2, H - total - 24);
+        col.forEach(function (c, k) {
+          var bx = side ? W - margin - boxW : margin, by = y0 + k * (boxH + gap);
+          c.el.classList.toggle("co--left", !side);
+          c.box.style.left = bx + "px";
+          c.box.style.top = by + "px";
+          c.dot.style.left = c.pt.x + "px";
+          c.dot.style.top = c.pt.y + "px";
+          var x2 = side ? bx : bx + boxW, y2 = by + (narrow ? 22 : 30), xm = x2 + (side ? -28 : 28);
+          c.path.setAttribute("d", "M" + c.pt.x.toFixed(1) + " " + c.pt.y.toFixed(1) + " L" + xm.toFixed(1) + " " + y2.toFixed(1) + " L" + x2.toFixed(1) + " " + y2.toFixed(1));
+        });
+      });
+    }
+
+
+    on3D(function () {
+      try {
+        mac = window.MacBook3D.createMacbook(host, document.getElementById("insideScreen"), {
+          fov: 24, internals: true,
+          onNeedsRender: function () { last = -1; }
+        });
+        measure();
+      } catch (e) { mac = null; }
+    });
+
+    function measure() {
+      top = track.getBoundingClientRect().top + window.scrollY;
+      len = Math.max(1, track.offsetHeight - window.innerHeight);
+      if (mac) { mac.resize(); last = -1; }
+    }
+
+    function render(q) {
+      var cam = mac.camera, t = Math.tan(cam.fov * Math.PI / 360);
+      var orbit = ease(seg(q, 0, .16));
+      var ex = ease(seg(q, .12, .42)) * (1 - ease(seg(q, .86, 1)));
+      var drift = seg(q, .42, .86);
+      // camera: front → three-quarter, pulled back while the layers spread
+      var az = (lerp(lerp(0, -38, orbit), -24, drift) + 38 * seg(q, .86, 1)) * Math.PI / 180;
+      var el = (lerp(14, 30, orbit) - 16 * seg(q, .86, 1)) * Math.PI / 180;
+      var fit = Math.max(38 / (0.8 * 2 * t * cam.aspect), 30 / (0.7 * 2 * t));
+      var narrow = window.innerWidth <= 860;
+      var d = fit * (1 + (narrow ? 0.45 : 0.78) * ex);
+      // starts to the right of the headline, centres as it opens up
+      var look = { x: -9 * (1 - orbit) * (narrow ? 0 : 1), y: 8 + 6.5 * ex - (narrow ? 9 * ex : 0), z: -2 - 8 * ex };
+      mac.setExplode(ex, q * 46);
+      mac.render({
+        lid: -0.32,
+        pos: { x: look.x + Math.sin(az) * Math.cos(el) * d, y: look.y + Math.sin(el) * d, z: look.z + Math.cos(az) * Math.cos(el) * d },
+        look: look
+      });
+      head.style.opacity = 1 - seg(q, .1, .2) + seg(q, .9, 1);
+
+      layoutCallouts(q, ex);
+    }
+
+    function update() {
+      if (!mac) return;
+      var r = track.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > window.innerHeight) return;
+      var target = clamp((window.scrollY - top) / len, 0, 1);
+      p = reduceMotion ? target : p + (target - p) * (lenis ? 0.22 : 0.14);
+      if (Math.abs(target - p) < 0.0003) p = target;
+      if (p === last) return;
+      last = p;
+      render(p);
+    }
+
+    return { measure: measure, update: update };
+  })();
+
   // ---------- Split headings into words ----------
   function wrapWords(el, make) {
     var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
@@ -634,6 +756,7 @@
     }
 
     if (sites) sites.update(reduceMotion);
+    if (inside) inside.update();
 
     // manifesto words
     var mr = manifesto.getBoundingClientRect();
@@ -684,6 +807,7 @@
   function remeasure() {
     placeCases();
     if (sites) sites.measure();
+    if (inside) inside.measure();
     if (!seq) return;
     seq.measure();
     seq.last = null;

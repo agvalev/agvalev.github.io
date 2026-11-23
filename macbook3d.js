@@ -101,6 +101,7 @@ export function createMacbook(host, screenEl, opts = {}) {
   });
 
   const camera = new THREE.PerspectiveCamera(opts.fov || 24, 1, 0.5, 4000);
+  const size = { w: 1, h: 1 };
   const { W, D, BH, LT, LD, R, SW, SH, SY } = DIM;
 
   // ----- materials
@@ -118,6 +119,9 @@ export function createMacbook(host, screenEl, opts = {}) {
 
   const root = new THREE.Group();
   scene.add(root);
+  // everything that sits on the top case (keyboard, trackpad, grilles, ports) — lifts off in the exploded view
+  const deck = new THREE.Group();
+  root.add(deck);
 
   // ----- base
   const baseGeo = slab(W, D, BH, R, 0.14);
@@ -132,7 +136,7 @@ export function createMacbook(host, screenEl, opts = {}) {
   const well = plate(wellW, wellD, 0.45, wellMat);
   well.rotation.x = -Math.PI / 2;
   well.position.set(0, BH + 0.002, wellZ);
-  root.add(well);
+  deck.add(well);
 
   const keyTop = BH + 0.13;
   const keySlots = [];
@@ -160,7 +164,7 @@ export function createMacbook(host, screenEl, opts = {}) {
     m.compose(new THREE.Vector3(k.x, BH + 0.07, k.z), q, new THREE.Vector3(k.w, 1, k.d));
     keys.setMatrixAt(i, m);
   });
-  root.add(keys);
+  deck.add(keys);
 
   // printed legends on top of the keys (one texture for the whole keyboard)
   const legendPx = 120; // pixels per cm
@@ -200,7 +204,7 @@ export function createMacbook(host, screenEl, opts = {}) {
     new THREE.MeshBasicMaterial({ map: legend, transparent: true, depthWrite: false, toneMapped: false, opacity: 0.8 }));
   legendPlane.rotation.x = -Math.PI / 2;
   legendPlane.position.set(0, keyTop + 0.003, wellZ);
-  root.add(legendPlane);
+  deck.add(legendPlane);
 
   // perforated speaker grilles either side of the keyboard
   const grille = canvasTexture(96, 1024, (g, w, h) => {
@@ -215,7 +219,7 @@ export function createMacbook(host, screenEl, opts = {}) {
     const p = new THREE.Mesh(new THREE.PlaneGeometry(1.25, wellD - 0.2), grilleMat);
     p.rotation.x = -Math.PI / 2;
     p.position.set(s * (wellW / 2 + (W / 2 - wellW / 2) / 2), BH + 0.002, wellZ);
-    root.add(p);
+    deck.add(p);
   });
 
   // glass trackpad
@@ -223,7 +227,7 @@ export function createMacbook(host, screenEl, opts = {}) {
   const pad = plate(13.8, padD, 0.45, padMat);
   pad.rotation.x = -Math.PI / 2;
   pad.position.set(0, BH + 0.002, padZ);
-  root.add(pad);
+  deck.add(pad);
 
   // thumb scoop on the front edge
   const scoop = canvasTexture(256, 64, (g, w, h) => {
@@ -235,7 +239,7 @@ export function createMacbook(host, screenEl, opts = {}) {
     new THREE.MeshBasicMaterial({ map: scoop, transparent: true, depthWrite: false }));
   scoopMesh.rotation.x = -Math.PI / 2;
   scoopMesh.position.set(0, BH + 0.003, D / 2 - 0.4);
-  root.add(scoopMesh);
+  deck.add(scoopMesh);
 
   // ports on the sides: MagSafe, Thunderbolt ×2, headphone (left) · HDMI, Thunderbolt, SD (right)
   const ports = [
@@ -246,14 +250,14 @@ export function createMacbook(host, screenEl, opts = {}) {
     const p = plate(w, h, r, portMat);
     p.rotation.y = side * Math.PI / 2;
     p.position.set(side * (W / 2 + 0.003), BH / 2, z);
-    root.add(p);
+    deck.add(p);
   });
 
   // hinge barrel
   const hinge = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.46, W - 5.6, 40), hingeMat);
   hinge.rotation.z = Math.PI / 2;
   hinge.position.set(0, BH + 0.03, -D / 2 + 0.5);
-  root.add(hinge);
+  deck.add(hinge);
 
   // ----- lid, pivoting on the hinge
   const lid = new THREE.Group();
@@ -315,6 +319,208 @@ export function createMacbook(host, screenEl, opts = {}) {
   shadow.position.y = -0.02;
   root.add(shadow);
 
+  // ----- internals for the exploded "what's inside" view (only when asked for)
+  const anchors = {};          // named points the page can attach HUD callouts to
+  const fanBlades = [];
+  let parts = null;
+  if (opts.internals) {
+    const TRAY = 0.42;
+    parts = { tray: new THREE.Group(), battery: new THREE.Group(), board: new THREE.Group(), topcase: new THREE.Group() };
+    Object.values(parts).forEach((g) => { g.visible = false; root.add(g); });
+
+    // bottom case: a milled tray (floor + rim) and a top-case slab that matches the full base when assembled
+    const rimShape = roundedRect(W - 0.28, D - 0.28, R - 0.14);
+    rimShape.holes.push(roundedRect(W - 1.1, D - 1.1, R - 0.5));
+    const rimGeo = new THREE.ExtrudeGeometry(rimShape, { depth: TRAY - 0.12, bevelEnabled: true, bevelThickness: 0.12, bevelSize: 0.14, bevelSegments: 4, curveSegments: 24 });
+    rimGeo.translate(0, 0, 0.12);
+    rimGeo.rotateX(-Math.PI / 2);
+    parts.tray.add(new THREE.Mesh(rimGeo, alu));
+    const floorMat = new THREE.MeshStandardMaterial({ color: 0x3a3b3f, metalness: 1, roughness: 0.55, envMapIntensity: 0.18 });
+    const floor = plate(W - 0.9, D - 0.9, R - 0.4, floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = 0.06;
+    parts.tray.add(floor);
+    // torx screws around the edge
+    const screwGeo = new THREE.CylinderGeometry(0.16, 0.16, 0.08, 16);
+    const screwMat = new THREE.MeshStandardMaterial({ color: 0x8c8d92, metalness: 1, roughness: 0.3, envMapIntensity: 0.5 });
+    [[-13.6, -9.3], [-4.5, -9.6], [4.5, -9.6], [13.6, -9.3], [-14.4, 0], [14.4, 0], [-13.6, 9.4], [13.6, 9.4]].forEach(([x, z]) => {
+      const sc = new THREE.Mesh(screwGeo, screwMat);
+      sc.position.set(x, TRAY - 0.02, z);
+      parts.tray.add(sc);
+    });
+
+    const topGeo = slab(W, D, BH - TRAY, R, 0.14);
+    topGeo.rotateX(-Math.PI / 2);
+    const top = new THREE.Mesh(topGeo, alu);
+    top.position.y = TRAY;
+    parts.topcase.add(top);
+
+    // battery: five cells in black foil
+    const cellMat = new THREE.MeshPhysicalMaterial({ color: 0x0c0c0e, metalness: 0.4, roughness: 0.35, clearcoat: 0.4, clearcoatRoughness: 0.3, envMapIntensity: 0.35 });
+    const cellLabel = (text) => canvasTexture(512, 256, (g, w, h) => {
+      g.fillStyle = "#0c0c0e"; g.fillRect(0, 0, w, h);
+      g.fillStyle = "rgba(255,255,255,.65)";
+      g.font = "600 30px -apple-system, 'Segoe UI', Arial, sans-serif";
+      g.fillText(text, 26, 60);
+      g.font = "400 20px -apple-system, 'Segoe UI', Arial, sans-serif";
+      g.fillStyle = "rgba(255,255,255,.4)";
+      g.fillText("Li-Polymer · 11.4 V", 26, 96);
+      g.fillText("Do not puncture · Recycle", 26, 124);
+      g.strokeStyle = "rgba(255,255,255,.25)"; g.lineWidth = 2; g.strokeRect(26, 150, 90, 60);
+    });
+    [[-8.0, 5.2, 7.6, 6.6], [0, 5.2, 7.6, 6.6], [8.0, 5.2, 7.6, 6.6], [-13.2, 0.4, 2.5, 7.0], [13.2, 0.4, 2.5, 7.0]].forEach(([x, z, w, d], i) => {
+      const cell = new THREE.Mesh(new RoundedBoxGeometry(w, 0.38, d, 3, 0.12), cellMat);
+      cell.position.set(x, 0.06 + 0.19, z);
+      parts.battery.add(cell);
+      if (i < 3) {
+        const lab = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 2.1), new THREE.MeshBasicMaterial({ map: cellLabel("TESTED · 80%+"), toneMapped: false }));
+        lab.rotation.x = -Math.PI / 2;
+        lab.position.set(x - 1.6, 0.06 + 0.385, z - 1.4);
+        parts.battery.add(lab);
+      }
+    });
+    anchors.battery = new THREE.Vector3(0, 0.45, 5.2);
+
+    // logic board: black PCB with gold traces
+    const pcbTex = canvasTexture(2048, 1024, (g, w, h) => {
+      g.fillStyle = "#0a0d0c"; g.fillRect(0, 0, w, h);
+      let seed = 3;
+      const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+      for (let i = 0; i < 420; i++) {          // traces: short orthogonal runs with a 45° bend
+        let x = rnd() * w, y = rnd() * h;
+        g.strokeStyle = "rgba(201,160,92," + (0.16 + rnd() * 0.22).toFixed(2) + ")";
+        g.lineWidth = 1.5 + rnd() * 2.5;
+        g.beginPath(); g.moveTo(x, y);
+        const len = 40 + rnd() * 260, horiz = rnd() > 0.5;
+        x += horiz ? len : 0; y += horiz ? 0 : len; g.lineTo(x, y);
+        const d = 20 + rnd() * 60; g.lineTo(x + d, y + d);
+        g.stroke();
+      }
+      for (let i = 0; i < 900; i++) {          // vias
+        g.fillStyle = "rgba(214,178,112,.55)";
+        g.beginPath(); g.arc(rnd() * w, rnd() * h, 2 + rnd() * 2.5, 0, Math.PI * 2); g.fill();
+      }
+      g.fillStyle = "rgba(255,255,255,.28)";       // silkscreen
+      g.font = "500 22px 'JetBrains Mono', Consolas, monospace";
+      ["AV-820-02021", "LOGIC BOARD REV 3", "J4501", "U9000", "C2207", "R7130"].forEach((t, i) => g.fillText(t, 60 + i * 320, 60 + (i % 2) * 900));
+    });
+    // extrude caps use shape coordinates as UVs: map the 19.5 × 9.2 board onto the texture
+    pcbTex.repeat.set(1 / 19.5, 1 / 9.2);
+    pcbTex.offset.set(0.5, 0.5);
+    const pcbMat = new THREE.MeshStandardMaterial({ map: pcbTex, roughness: 0.55, metalness: 0.15, envMapIntensity: 0.14 });
+    const pcbShape = roundedRect(19.5, 9.2, 0.6);
+    const pcb = new THREE.Mesh(new THREE.ExtrudeGeometry(pcbShape, { depth: 0.12, bevelEnabled: false }), [pcbMat, new THREE.MeshStandardMaterial({ color: 0x14231c, roughness: 0.6 })]);
+    pcb.rotation.x = -Math.PI / 2;
+    pcb.position.set(0, 0.5, -4.7 + 9.2 / 2 - 4.6);
+    parts.board.add(pcb);
+    const boardY = 0.62;
+
+    // chips: black epoxy packages with laser-etched labels; the SoC wears a polished heat spreader
+    const chipLabel = (title, sub, big) => canvasTexture(512, 512, (g, w, h) => {
+      g.fillStyle = big ? "#1b1c1f" : "#0b0b0c"; g.fillRect(0, 0, w, h);
+      if (big) { const gr = g.createLinearGradient(0, 0, w, h); gr.addColorStop(0, "rgba(255,255,255,.10)"); gr.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = gr; g.fillRect(0, 0, w, h); }
+      g.fillStyle = "rgba(220,220,225,.78)";
+      g.textAlign = "center";
+      g.font = (big ? "600 92px" : "600 64px") + " -apple-system, 'Segoe UI', Arial, sans-serif";
+      g.fillText(title, w / 2, h / 2 + (big ? 10 : 8));
+      g.font = "400 30px 'JetBrains Mono', Consolas, monospace";
+      g.fillStyle = "rgba(220,220,225,.42)";
+      g.fillText(sub, w / 2, h / 2 + (big ? 74 : 60));
+      g.beginPath(); g.arc(44, 44, 12, 0, Math.PI * 2); g.fill();   // pin-1 dot
+    });
+    const chips = [
+      { id: "python", x: 0, z: -5.6, w: 4.2, d: 4.2, h: 0.32, title: "Python", sub: "SoC · 3.12", big: true },
+      { id: "fastapi", x: -4.4, z: -6.9, w: 2.4, d: 1.9, h: 0.16, title: "FastAPI", sub: "REST · OpenAPI" },
+      { id: "django", x: -4.4, z: -4.2, w: 2.4, d: 1.9, h: 0.16, title: "Django", sub: "ORM · admin" },
+      { id: "postgres", x: 4.4, z: -6.9, w: 2.4, d: 1.9, h: 0.16, title: "PostgreSQL", sub: "DATA · SQL" },
+      { id: "docker", x: 4.4, z: -4.2, w: 2.4, d: 1.9, h: 0.16, title: "Docker", sub: "COMPOSE" },
+      { id: "linux", x: -7.4, z: -5.5, w: 1.5, d: 1.5, h: 0.14, title: "Linux", sub: "x86 · arm" },
+      { id: "actions", x: 7.4, z: -5.5, w: 1.5, d: 1.5, h: 0.14, title: "CI", sub: "Actions" }
+    ];
+    chips.forEach((c) => {
+      const tex = chipLabel(c.title, c.sub, c.big);
+      const top = c.big
+        ? new THREE.MeshPhysicalMaterial({ map: tex, metalness: 0.85, roughness: 0.22, clearcoat: 0.6, envMapIntensity: 0.6 })
+        : new THREE.MeshStandardMaterial({ map: tex, metalness: 0.1, roughness: 0.55, envMapIntensity: 0.3 });
+      const side = new THREE.MeshStandardMaterial({ color: 0x0b0b0c, roughness: 0.6 });
+      const box = new THREE.Mesh(new THREE.BoxGeometry(c.w, c.h, c.d), [side, side, top, side, side, side]);
+      box.position.set(c.x, boardY + c.h / 2, c.z);
+      parts.board.add(box);
+      if (!c.big) {          // gold pads along the long edges
+        const padM = new THREE.MeshStandardMaterial({ color: 0xc9a05c, metalness: 1, roughness: 0.3, envMapIntensity: 0.6 });
+        for (let k = 0; k < 8; k++) [-1, 1].forEach((s) => {
+          const p = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.04, 0.22), padM);
+          p.position.set(c.x - c.w / 2 + 0.25 + k * (c.w - 0.5) / 7, boardY + 0.02, c.z + s * (c.d / 2 + 0.11));
+          parts.board.add(p);
+        });
+      }
+      anchors[c.id] = new THREE.Vector3(c.x, boardY + c.h, c.z);
+    });
+
+    // two fans with curved blades, and copper heat pipes from the SoC to the fans
+    const fanMat = new THREE.MeshStandardMaterial({ color: 0x101012, roughness: 0.5, metalness: 0.2, envMapIntensity: 0.4 });
+    const bladeMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.45, metalness: 0.1, envMapIntensity: 0.4 });
+    [-1, 1].forEach((s) => {
+      const fx = s * 11.4, fz = -6.2;
+      const housing = new THREE.Mesh(new THREE.CylinderGeometry(2.75, 2.75, 0.5, 48, 1, true), fanMat);
+      housing.position.set(fx, boardY + 0.15, fz);
+      parts.board.add(housing);
+      const basePlate = new THREE.Mesh(new THREE.CircleGeometry(2.75, 48), fanMat);
+      basePlate.rotation.x = -Math.PI / 2;
+      basePlate.position.set(fx, 0.5, fz);
+      parts.board.add(basePlate);
+      const rotor = new THREE.Group();
+      rotor.position.set(fx, boardY + 0.15, fz);
+      const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.42, 32), new THREE.MeshPhysicalMaterial({ color: 0x1d1e21, metalness: 0.6, roughness: 0.25, clearcoat: 0.8 }));
+      rotor.add(hub);
+      for (let b = 0; b < 31; b++) {
+        const blade = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.36, 0.05), bladeMat);
+        const a = (b / 31) * Math.PI * 2;
+        blade.position.set(Math.cos(a) * 1.7, 0, Math.sin(a) * 1.7);
+        blade.rotation.y = -a + 0.5;
+        rotor.add(blade);
+      }
+      parts.board.add(rotor);
+      fanBlades.push(rotor);
+      const pipe = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
+        new THREE.Vector3(s * 1.4, boardY + 0.42, -5.6), new THREE.Vector3(s * 4.6, boardY + 0.42, -8.4),
+        new THREE.Vector3(s * 8.4, boardY + 0.42, -8.2), new THREE.Vector3(fx - s * 2.2, boardY + 0.42, fz - 1.4)
+      ]), 48, 0.2, 12, false), new THREE.MeshStandardMaterial({ color: 0xb87333, metalness: 1, roughness: 0.32, envMapIntensity: 0.7 }));
+      pipe.scale.y = 0.6;
+      parts.board.add(pipe);
+    });
+    anchors.fans = new THREE.Vector3(11.4, boardY + 0.5, -6.2);
+    anchors.keyboard = new THREE.Vector3(-6, BH + 0.14, -5);
+  }
+
+  // t: 0 assembled … 1 fully exploded; spin: fan rotation in radians
+  function setExplode(t, spin) {
+    if (!parts) return;
+    const on = t > 0.001;
+    base.visible = !on;
+    Object.values(parts).forEach((g) => { g.visible = on; });
+    // staircase: each layer rises and slides back so the one below stays visible
+    parts.tray.position.set(0, -2.5 * t, 9 * t);
+    parts.battery.position.set(0, 1.2 * t, 5 * t);
+    parts.board.position.set(0, 5.2 * t, -1 * t);
+    parts.topcase.position.set(0, 12 * t, -15 * t);
+    deck.position.set(0, 12 * t, -15 * t);
+    lid.position.y = BH + 0.035 + 17 * t;
+    lid.position.z = -D / 2 + 0.46 - 25 * t;
+    fanBlades.forEach((r, i) => { r.rotation.y = (i ? -1 : 1) * (spin || 0); });
+  }
+  // project named anchors to pixel coordinates inside the host
+  const proj = new THREE.Vector3();
+  function project(name) {
+    const a = anchors[name];
+    if (!a) return null;
+    const g = name === "battery" ? parts.battery : name === "keyboard" ? deck : parts.board;
+    proj.copy(a);
+    g.localToWorld(proj);
+    proj.project(camera);
+    return { x: (proj.x * 0.5 + 0.5) * size.w, y: (-proj.y * 0.5 + 0.5) * size.h, behind: proj.z > 1 };
+  }
+
   // ----- lights on top of the HDRI: gold rim from behind, gentle key from the front
   const rim = new THREE.DirectionalLight(0xe8c88f, 2.2);
   rim.position.set(-30, 26, -44);
@@ -344,6 +550,7 @@ export function createMacbook(host, screenEl, opts = {}) {
   function resize() {
     const r = host.getBoundingClientRect();
     const w = Math.max(1, Math.round(r.width)), h = Math.max(1, Math.round(r.height));
+    size.w = w; size.h = h;
     renderer.setSize(w, h);
     css.setSize(w, h);
     camera.aspect = w / h;
@@ -380,7 +587,7 @@ export function createMacbook(host, screenEl, opts = {}) {
     css.render(cssScene, camera);
   }
 
-  return { render, resize, screenInfo, coverDistance, camera, DIM };
+  return { render, resize, screenInfo, coverDistance, setExplode, project, camera, DIM };
 }
 
 window.MacBook3D = { createMacbook };

@@ -200,11 +200,81 @@
       </div>
     </section>
 
+    <!-- INSIDE: the MacBook comes apart; its chips are the stack -->
+    <section class="inside" id="inside" aria-label="What's inside">
+      <div class="inside__track" id="insideTrack">
+        <div class="inside__sticky">
+          <div class="inside__glow" aria-hidden="true"></div>
+          <div class="wrap inside__head">
+            <p class="label"><span class="label__num">(02)</span> <span lang="en">Inside</span><span lang="bg">Отвътре</span></p>
+            <h2 class="inside__title">
+              <span lang="en">Engineered from <em>the inside out.</em></span>
+              <span lang="bg">Проектирано <em>отвътре навън.</em></span>
+            </h2>
+          </div>
+
+          <div class="mb3d" id="insideMac" aria-hidden="true"></div>
+
+          <div class="callouts" id="callouts" aria-hidden="true">
+            <div class="co" data-anchor="python"><i class="co__dot"></i><i class="co__line"></i>
+              <div class="co__box"><span class="co__k">01 — Core</span><b>Python</b>
+                <p lang="en">The core everything runs on — scripts, APIs and desktop apps.</p>
+                <p lang="bg">Ядрото, на което работи всичко — скриптове, API-та и десктоп приложения.</p></div></div>
+            <div class="co" data-anchor="fastapi"><i class="co__dot"></i><i class="co__line"></i>
+              <div class="co__box"><span class="co__k">02 — APIs</span><b>FastAPI &amp; Django</b>
+                <p lang="en">Clean REST APIs with OpenAPI docs and a clear structure.</p>
+                <p lang="bg">Чисти REST API-та с OpenAPI документация и ясна структура.</p></div></div>
+            <div class="co" data-anchor="postgres"><i class="co__dot"></i><i class="co__line"></i>
+              <div class="co__box"><span class="co__k">03 — Data</span><b>PostgreSQL</b>
+                <p lang="en">Data modelled properly and queried fast.</p>
+                <p lang="bg">Правилно моделирани данни и бързи заявки.</p></div></div>
+            <div class="co" data-anchor="docker"><i class="co__dot"></i><i class="co__line"></i>
+              <div class="co__box"><span class="co__k">04 — Shipping</span><b>Docker + CI</b>
+                <p lang="en">Containerised, and tested on every push with GitHub Actions.</p>
+                <p lang="bg">В контейнери и тествано при всеки push с GitHub Actions.</p></div></div>
+            <div class="co" data-anchor="fans"><i class="co__dot"></i><i class="co__line"></i>
+              <div class="co__box"><span class="co__k">05 — Automation</span><b lang="en">Always running</b><b lang="bg">Винаги работи</b>
+                <p lang="en">Scrapers and cron jobs that keep turning in the background.</p>
+                <p lang="bg">Скрейпъри и cron задачи, които се въртят във фона.</p></div></div>
+            <div class="co" data-anchor="battery"><i class="co__dot"></i><i class="co__line"></i>
+              <div class="co__box"><span class="co__k">06 — Tests</span><b lang="en">Built to last</b><b lang="bg">Направено да издържа</b>
+                <p lang="en">80%+ test coverage on Fuel API — code you can rely on.</p>
+                <p lang="bg">80%+ покритие с тестове на Fuel API — код, на който можеш да разчиташ.</p></div></div>
+            <div class="co" data-anchor="keyboard"><i class="co__dot"></i><i class="co__line"></i>
+              <div class="co__box"><span class="co__k">07 — Interfaces</span><b lang="en">What people touch</b><b lang="bg">Това, което хората докосват</b>
+                <p lang="en">PyQt6 desktop apps, TypeScript and Next.js on the web.</p>
+                <p lang="bg">PyQt6 десктоп приложения, TypeScript и Next.js за уеб.</p></div></div>
+          </div>
+
+          <div class="screen screen--mon" id="insideScreen">
+            <div class="notch"></div>
+            <div class="mon">
+              <div class="mon__bar"><span class="ide__dots"><i></i><i></i><i></i></span><b>Activity Monitor</b><span>anatoli@portfolio</span></div>
+              <div class="mon__cards">
+                <div class="mon__card"><span>CPU</span><b>Python 3.12</b><svg viewBox="0 0 100 30" preserveAspectRatio="none"><path d="M0 24 L8 20 L16 22 L24 14 L32 17 L40 9 L48 13 L56 7 L64 12 L72 6 L80 10 L88 4 L100 8"/></svg></div>
+                <div class="mon__card"><span>Memory</span><b>PostgreSQL</b><svg viewBox="0 0 100 30" preserveAspectRatio="none"><path d="M0 18 L10 17 L20 18 L30 15 L40 16 L50 13 L60 14 L70 12 L80 13 L90 11 L100 12"/></svg></div>
+                <div class="mon__card"><span>Network</span><b>FastAPI</b><svg viewBox="0 0 100 30" preserveAspectRatio="none"><path d="M0 26 L6 12 L12 22 L18 8 L24 20 L30 14 L36 24 L42 6 L48 18 L54 10 L60 22 L66 9 L72 19 L78 7 L84 16 L90 11 L100 20"/></svg></div>
+              </div>
+              <div class="mon__table">
+                <div class="mon__row mon__row--h"><span>Process</span><span>CPU %</span><span>Threads</span><span>Status</span></div>
+                <div class="mon__row"><span>uvicorn main:app</span><span>2.4</span><span>8</span><span class="ok">running</span></div>
+                <div class="mon__row"><span>postgres</span><span>1.1</span><span>12</span><span class="ok">running</span></div>
+                <div class="mon__row"><span>dockerd</span><span>0.6</span><span>21</span><span class="ok">running</span></div>
+                <div class="mon__row"><span>cron · scrape fuel prices</span><span>0.3</span><span>2</span><span class="ok">scheduled</span></div>
+                <div class="mon__row"><span>pytest -q --cov</span><span>0.0</span><span>1</span><span class="ok">passed</span></div>
+              </div>
+            </div>
+            <div class="screen__shine"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- SERVICES -->
     <section class="services">
       <div class="wrap">
         <div class="head">
-          <p class="label"><span class="label__num">(02)</span> <span lang="en">Capabilities</span><span lang="bg">Какво правя</span></p>
+          <p class="label"><span class="label__num">(03)</span> <span lang="en">Capabilities</span><span lang="bg">Какво правя</span></p>
           <h2 data-split><span lang="en">What I <em>build</em></span><span lang="bg">Какво <em>изграждам</em></span></h2>
         </div>
         <ol class="svc">
@@ -241,7 +311,7 @@
       <div class="wrap">
         <div class="head head--row">
           <div>
-            <p class="label"><span class="label__num">(03)</span> <span lang="en">Selected work</span><span lang="bg">Избрани проекти</span></p>
+            <p class="label"><span class="label__num">(04)</span> <span lang="en">Selected work</span><span lang="bg">Избрани проекти</span></p>
             <h2 data-split><span lang="en">Case <em>studies</em></span><span lang="bg">Проекти в <em>детайл</em></span></h2>
           </div>
           <p class="head__note reveal-me">
@@ -385,7 +455,7 @@
       <div class="wrap">
         <div class="head head--row">
           <div>
-            <p class="label"><span class="label__num">(04)</span> <span lang="en">Websites</span><span lang="bg">Уебсайтове</span></p>
+            <p class="label"><span class="label__num">(05)</span> <span lang="en">Websites</span><span lang="bg">Уебсайтове</span></p>
             <h2 data-split><span lang="en">Built for local <em>businesses</em></span><span lang="bg">Сайтове за местен <em>бизнес</em></span></h2>
           </div>
           <p class="head__note reveal-me">
@@ -514,7 +584,7 @@
     <section class="bento-sec" id="stack">
       <div class="wrap">
         <div class="head">
-          <p class="label"><span class="label__num">(05)</span> <span lang="en">Stack</span><span lang="bg">Технологии</span></p>
+          <p class="label"><span class="label__num">(06)</span> <span lang="en">Stack</span><span lang="bg">Технологии</span></p>
           <h2 data-split><span lang="en">Tools of the <em>trade</em></span><span lang="bg">Инструментите на <em>занаята</em></span></h2>
         </div>
         <div class="bento" id="bento">
@@ -557,7 +627,7 @@
     <section class="principles">
       <div class="wrap">
         <div class="head">
-          <p class="label"><span class="label__num">(06)</span> <span lang="en">Principles</span><span lang="bg">Принципи</span></p>
+          <p class="label"><span class="label__num">(07)</span> <span lang="en">Principles</span><span lang="bg">Принципи</span></p>
           <h2 data-split><span lang="en">How I <em>work</em></span><span lang="bg">Как <em>работя</em></span></h2>
         </div>
         <div class="pr">
@@ -589,7 +659,7 @@
     <section class="edu">
       <div class="wrap edu__grid">
         <div class="head">
-          <p class="label"><span class="label__num">(07)</span> <span lang="en">Education</span><span lang="bg">Образование</span></p>
+          <p class="label"><span class="label__num">(08)</span> <span lang="en">Education</span><span lang="bg">Образование</span></p>
           <h2 data-split><span lang="en">Always <em>learning</em></span><span lang="bg">Винаги <em>уча</em></span></h2>
         </div>
         <ol class="edu__list">
@@ -606,7 +676,7 @@
     <section class="contact" id="contact">
       <div class="contact__glow" aria-hidden="true"></div>
       <div class="wrap">
-        <p class="label"><span class="label__num">(08)</span> <span lang="en">Contact</span><span lang="bg">Контакт</span></p>
+        <p class="label"><span class="label__num">(09)</span> <span lang="en">Contact</span><span lang="bg">Контакт</span></p>
         <h2 class="contact__title" data-split>
           <span lang="en">Let's build something <em>exceptional.</em></span>
           <span lang="bg">Да създадем нещо <em>изключително.</em></span>
