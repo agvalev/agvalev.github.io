@@ -248,7 +248,7 @@ export function createMacbook(host, screenEl, opts = {}) {
 
   // glass trackpad
   const padD = 8.0, padZ = wellZ + wellD / 2 + 1.05 + padD / 2;
-  const padGap = plate(13.8 + 0.1, padD + 0.1, 0.5, new THREE.MeshStandardMaterial({ color: 0x1b1b1e, roughness: 0.7, metalness: 0.3 }));
+  const padGap = plate(13.8 + 0.1, padD + 0.1, 0.5, new THREE.MeshStandardMaterial({ color: 0x0d0d0f, roughness: 0.85, metalness: 0, envMapIntensity: 0.1 }));
   padGap.rotation.x = -Math.PI / 2;
   padGap.position.set(0, BH + 0.006, wellZ + wellD / 2 + 1.05 + padD / 2);
   deck.add(padGap);
@@ -355,43 +355,79 @@ export function createMacbook(host, screenEl, opts = {}) {
   shadow.position.y = -0.02;
   root.add(shadow);
 
+  // the live DOM screen sits on this point of the lid
+  const anchor = new THREE.Object3D();
+  anchor.position.set(0, SY, 0.012);
+  lid.add(anchor);
+
   // ----- internals for the exploded "what's inside" view (only when asked for)
-  const anchors = {};          // named points the page can attach HUD callouts to
+  // Every part is a "piece": it starts where it sits in the assembled laptop and travels by `to`
+  // during its own slice [a, b] of the explode, so the laptop comes apart one part after another.
+  const anchors = {};          // name → { obj, v }: points the page attaches HUD callouts to
   const fanBlades = [];
-  let parts = null;
+  const pieces = [];
+  const onlyExploded = [];      // layers that only exist in the exploded view (hidden inside the closed shell)
+  let internals = null, explodeExtras = () => {};
+  const smoother = (x) => x * x * x * (x * (x * 6 - 15) + 10);
+  const piece = (obj, to, a, b, extra) => {
+    const p = Object.assign({ obj, home: obj.position.clone(), to: new THREE.Vector3(...to), a, b }, extra || {});
+    pieces.push(p);
+    return p;
+  };
   if (opts.internals) {
     const TRAY = 0.42;
-    parts = { tray: new THREE.Group(), battery: new THREE.Group(), board: new THREE.Group(), topcase: new THREE.Group() };
-    Object.values(parts).forEach((g) => { g.visible = false; root.add(g); });
+    internals = new THREE.Group();
+    internals.visible = false;
+    root.add(internals);
+    const add = (o) => { internals.add(o); return o; };
+    const steel = new THREE.MeshStandardMaterial({ color: 0x8c8d92, metalness: 1, roughness: 0.3, envMapIntensity: 0.5 });
+    const screwGeo = new THREE.CylinderGeometry(0.16, 0.16, 0.08, 18);
+    const screwShaft = new THREE.CylinderGeometry(0.07, 0.07, 0.42, 10);
+    const makeScrew = () => {
+      const s = new THREE.Group();
+      s.add(new THREE.Mesh(screwGeo, steel));
+      const shaft = new THREE.Mesh(screwShaft, steel);
+      shaft.position.y = -0.24;
+      s.add(shaft);
+      return s;
+    };
 
-    // bottom case: a milled tray (floor + rim) and a top-case slab that matches the full base when assembled
+    // --- bottom case: a milled tray (floor + rim), rubber feet and torx screws
+    const tray = add(new THREE.Group());
     const rimShape = roundedRect(W - 0.28, D - 0.28, R - 0.14);
     rimShape.holes.push(roundedRect(W - 1.1, D - 1.1, R - 0.5));
     const rimGeo = new THREE.ExtrudeGeometry(rimShape, { depth: TRAY - 0.12, bevelEnabled: true, bevelThickness: 0.12, bevelSize: 0.14, bevelSegments: 4, curveSegments: 24 });
     rimGeo.translate(0, 0, 0.12);
     rimGeo.rotateX(-Math.PI / 2);
-    parts.tray.add(new THREE.Mesh(rimGeo, alu));
-    const floorMat = new THREE.MeshStandardMaterial({ color: 0x3a3b3f, metalness: 1, roughness: 0.55, envMapIntensity: 0.18 });
+    tray.add(new THREE.Mesh(rimGeo, alu));
+    const floorMat = new THREE.MeshStandardMaterial({ color: 0x3a3b3f, metalness: 1, roughness: 0.55, roughnessMap: grain, envMapIntensity: 0.18 });
     const floor = plate(W - 0.9, D - 0.9, R - 0.4, floorMat);
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = 0.06;
-    parts.tray.add(floor);
-    // torx screws around the edge
-    const screwGeo = new THREE.CylinderGeometry(0.16, 0.16, 0.08, 16);
-    const screwMat = new THREE.MeshStandardMaterial({ color: 0x8c8d92, metalness: 1, roughness: 0.3, envMapIntensity: 0.5 });
-    [[-13.6, -9.3], [-4.5, -9.6], [4.5, -9.6], [13.6, -9.3], [-14.4, 0], [14.4, 0], [-13.6, 9.4], [13.6, 9.4]].forEach(([x, z]) => {
-      const sc = new THREE.Mesh(screwGeo, screwMat);
-      sc.position.set(x, TRAY - 0.02, z);
-      parts.tray.add(sc);
+    tray.add(floor);
+    // milled ribs on the floor
+    const ribMat = new THREE.MeshStandardMaterial({ color: 0x414247, metalness: 1, roughness: 0.5, envMapIntensity: 0.2 });
+    [[-7.6, 0.9, 0.12, 15], [7.6, 0.9, 0.12, 15], [0, -2.2, 26, 0.12]].forEach(([x, z, w, d]) => {
+      const rib = new THREE.Mesh(new THREE.BoxGeometry(w, 0.1, d), ribMat);
+      rib.position.set(x, 0.11, z);
+      tray.add(rib);
+    });
+    piece(tray, [0, -3.4, 11], 0.34, 0.86);
+
+    const footMat = new THREE.MeshStandardMaterial({ color: 0x0b0b0c, roughness: 0.92, metalness: 0 });
+    [[-12.9, -8.6], [12.9, -8.6], [-12.9, 8.6], [12.9, 8.6]].forEach(([x, z], i) => {
+      const foot = add(new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.66, 0.14, 32), footMat));
+      foot.position.set(x, -0.07, z);
+      piece(foot, [0, -5.2, 11], 0.4 + i * 0.02, 0.9);
+    });
+    [[-13.6, -9.3], [-4.5, -9.6], [4.5, -9.6], [13.6, -9.3], [-14.4, 0], [14.4, 0], [-13.6, 9.4], [13.6, 9.4]].forEach(([x, z], i) => {
+      const sc = add(makeScrew());
+      sc.rotation.x = Math.PI;             // they go in from underneath
+      sc.position.set(x, -0.04, z);
+      piece(sc, [0, -6.6, 11], 0.36 + i * 0.018, 0.86, { spin: -9 });
     });
 
-    const topGeo = slab(W, D, BH - TRAY, R, 0.14);
-    topGeo.rotateX(-Math.PI / 2);
-    const top = new THREE.Mesh(topGeo, alu);
-    top.position.y = TRAY;
-    parts.topcase.add(top);
-
-    // battery: five cells in black foil
+    // --- battery: three large cells in black foil with printed labels
     const cellMat = new THREE.MeshPhysicalMaterial({ color: 0x0c0c0e, metalness: 0.4, roughness: 0.35, clearcoat: 0.4, clearcoatRoughness: 0.3, envMapIntensity: 0.35 });
     const cellLabel = (text) => canvasTexture(512, 256, (g, w, h) => {
       g.fillStyle = "#0c0c0e"; g.fillRect(0, 0, w, h);
@@ -404,20 +440,40 @@ export function createMacbook(host, screenEl, opts = {}) {
       g.fillText("Do not puncture · Recycle", 26, 124);
       g.strokeStyle = "rgba(255,255,255,.25)"; g.lineWidth = 2; g.strokeRect(26, 150, 90, 60);
     });
-    [[-8.0, 5.2, 7.6, 6.6], [0, 5.2, 7.6, 6.6], [8.0, 5.2, 7.6, 6.6], [-13.2, 0.4, 2.5, 7.0], [13.2, 0.4, 2.5, 7.0]].forEach(([x, z, w, d], i) => {
-      const cell = new THREE.Mesh(new RoundedBoxGeometry(w, 0.38, d, 3, 0.12), cellMat);
-      cell.position.set(x, 0.06 + 0.19, z);
-      parts.battery.add(cell);
-      if (i < 3) {
-        const lab = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 2.1), new THREE.MeshBasicMaterial({ map: cellLabel("TESTED · 80%+"), toneMapped: false }));
-        lab.rotation.x = -Math.PI / 2;
-        lab.position.set(x - 1.6, 0.06 + 0.385, z - 1.4);
-        parts.battery.add(lab);
-      }
+    const labelTex = cellLabel("TESTED · 80%+");
+    [-8.0, 0, 8.0].forEach((x, i) => {
+      const cell = add(new THREE.Group());
+      cell.position.set(x, 0.25, 5.2);
+      cell.add(new THREE.Mesh(new RoundedBoxGeometry(7.6, 0.38, 6.6, 3, 0.12), cellMat));
+      const lab = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 2.1), new THREE.MeshBasicMaterial({ map: labelTex, toneMapped: false }));
+      lab.rotation.x = -Math.PI / 2;
+      lab.position.set(-1.6, 0.195, -1.4);
+      cell.add(lab);
+      piece(cell, [0, 1.3, 7], 0.28 + i * 0.035, 0.78 + i * 0.035);
+      if (i === 1) anchors.battery = { obj: cell, v: new THREE.Vector3(0, 0.2, 0) };
     });
-    anchors.battery = new THREE.Vector3(0, 0.45, 5.2);
 
-    // logic board: black PCB with gold traces
+    // --- speakers: two long modules either side of the battery
+    const spkMat = new THREE.MeshStandardMaterial({ color: 0x121214, roughness: 0.55, metalness: 0.3, envMapIntensity: 0.3 });
+    const spkGrille = new THREE.MeshBasicMaterial({ map: grille, transparent: true, opacity: 0.85, depthWrite: false });
+    [-1, 1].forEach((s) => {
+      const spk = add(new THREE.Group());
+      spk.position.set(s * 13.3, 0.3, 0.6);
+      spk.add(new THREE.Mesh(new RoundedBoxGeometry(2.3, 0.44, 7.4, 3, 0.14), spkMat));
+      const top = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 6.4), spkGrille);
+      top.rotation.x = -Math.PI / 2;
+      top.position.y = 0.225;
+      spk.add(top);
+      const coil = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.06, 10, 40), new THREE.MeshStandardMaterial({ color: 0xc9a05c, metalness: 1, roughness: 0.3, envMapIntensity: 0.6 }));
+      coil.rotation.x = Math.PI / 2;
+      coil.position.set(0, 0.23, 2.6);
+      spk.add(coil);
+      piece(spk, [s * 3.2, 2.6, 5], 0.3, 0.82);
+    });
+
+    // --- logic board: black PCB with gold traces, fan housings, chips, heat pipes, screws
+    const board = add(new THREE.Group());
+    const boardTo = [0, 4.8, 0.5];
     const pcbTex = canvasTexture(2048, 1024, (g, w, h) => {
       g.fillStyle = "#0a0d0c"; g.fillRect(0, 0, w, h);
       let seed = 3;
@@ -444,14 +500,15 @@ export function createMacbook(host, screenEl, opts = {}) {
     pcbTex.repeat.set(1 / 19.5, 1 / 9.2);
     pcbTex.offset.set(0.5, 0.5);
     const pcbMat = new THREE.MeshStandardMaterial({ map: pcbTex, roughness: 0.55, metalness: 0.15, envMapIntensity: 0.14 });
-    const pcbShape = roundedRect(19.5, 9.2, 0.6);
-    const pcb = new THREE.Mesh(new THREE.ExtrudeGeometry(pcbShape, { depth: 0.12, bevelEnabled: false }), [pcbMat, new THREE.MeshStandardMaterial({ color: 0x14231c, roughness: 0.6 })]);
+    const pcb = new THREE.Mesh(new THREE.ExtrudeGeometry(roundedRect(19.5, 9.2, 0.6), { depth: 0.12, bevelEnabled: false }), [pcbMat, new THREE.MeshStandardMaterial({ color: 0x14231c, roughness: 0.6 })]);
     pcb.rotation.x = -Math.PI / 2;
-    pcb.position.set(0, 0.5, -4.7 + 9.2 / 2 - 4.6);
-    parts.board.add(pcb);
+    pcb.position.set(0, 0.5, -4.7);
+    board.add(pcb);
     const boardY = 0.62;
+    piece(board, boardTo, 0.2, 0.74);
 
-    // chips: black epoxy packages with laser-etched labels; the SoC wears a polished heat spreader
+    // chips: black epoxy packages with laser-etched labels; the SoC wears a polished heat spreader.
+    // Each one lifts off the board on its own.
     const chipLabel = (title, sub, big) => canvasTexture(512, 512, (g, w, h) => {
       g.fillStyle = big ? "#1b1c1f" : "#0b0b0c"; g.fillRect(0, 0, w, h);
       if (big) { const gr = g.createLinearGradient(0, 0, w, h); gr.addColorStop(0, "rgba(255,255,255,.10)"); gr.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = gr; g.fillRect(0, 0, w, h); }
@@ -473,76 +530,208 @@ export function createMacbook(host, screenEl, opts = {}) {
       { id: "linux", x: -7.4, z: -5.5, w: 1.5, d: 1.5, h: 0.14, title: "Linux", sub: "x86 · arm" },
       { id: "actions", x: 7.4, z: -5.5, w: 1.5, d: 1.5, h: 0.14, title: "CI", sub: "Actions" }
     ];
-    chips.forEach((c) => {
+    const padM = new THREE.MeshStandardMaterial({ color: 0xc9a05c, metalness: 1, roughness: 0.3, envMapIntensity: 0.6 });
+    const padGeo = new THREE.BoxGeometry(0.1, 0.04, 0.22);
+    chips.forEach((c, i) => {
       const tex = chipLabel(c.title, c.sub, c.big);
       const top = c.big
         ? new THREE.MeshPhysicalMaterial({ map: tex, metalness: 0.85, roughness: 0.22, clearcoat: 0.6, envMapIntensity: 0.6 })
         : new THREE.MeshStandardMaterial({ map: tex, metalness: 0.1, roughness: 0.55, envMapIntensity: 0.3 });
       const side = new THREE.MeshStandardMaterial({ color: 0x0b0b0c, roughness: 0.6 });
-      const box = new THREE.Mesh(new THREE.BoxGeometry(c.w, c.h, c.d), [side, side, top, side, side, side]);
-      box.position.set(c.x, boardY + c.h / 2, c.z);
-      parts.board.add(box);
+      const chip = new THREE.Group();
+      chip.position.set(c.x, boardY + c.h / 2, c.z);
+      chip.add(new THREE.Mesh(new THREE.BoxGeometry(c.w, c.h, c.d), [side, side, top, side, side, side]));
       if (!c.big) {          // gold pads along the long edges
-        const padM = new THREE.MeshStandardMaterial({ color: 0xc9a05c, metalness: 1, roughness: 0.3, envMapIntensity: 0.6 });
         for (let k = 0; k < 8; k++) [-1, 1].forEach((s) => {
-          const p = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.04, 0.22), padM);
-          p.position.set(c.x - c.w / 2 + 0.25 + k * (c.w - 0.5) / 7, boardY + 0.02, c.z + s * (c.d / 2 + 0.11));
-          parts.board.add(p);
+          const p = new THREE.Mesh(padGeo, padM);
+          p.position.set(-c.w / 2 + 0.25 + k * (c.w - 0.5) / 7, -c.h / 2 + 0.02, s * (c.d / 2 + 0.11));
+          chip.add(p);
         });
       }
-      anchors[c.id] = new THREE.Vector3(c.x, boardY + c.h, c.z);
+      board.add(chip);
+      piece(chip, [0, c.big ? 2.2 : 1.5, 0], 0.4 + i * 0.03, 0.8 + i * 0.02);
+      anchors[c.id] = { obj: chip, v: new THREE.Vector3(0, c.h / 2, 0) };
     });
 
-    // two fans with curved blades, and copper heat pipes from the SoC to the fans
+    // two fans: housings stay on the board, the rotors lift out and spin; copper heat pipes float above
     const fanMat = new THREE.MeshStandardMaterial({ color: 0x101012, roughness: 0.5, metalness: 0.2, envMapIntensity: 0.4 });
     const bladeMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.45, metalness: 0.1, envMapIntensity: 0.4 });
+    const bladeGeo = new THREE.BoxGeometry(1.75, 0.36, 0.05);
+    const thermal = new THREE.Group();
+    board.add(thermal);
     [-1, 1].forEach((s) => {
       const fx = s * 11.4, fz = -6.2;
       const housing = new THREE.Mesh(new THREE.CylinderGeometry(2.75, 2.75, 0.5, 48, 1, true), fanMat);
       housing.position.set(fx, boardY + 0.15, fz);
-      parts.board.add(housing);
+      board.add(housing);
       const basePlate = new THREE.Mesh(new THREE.CircleGeometry(2.75, 48), fanMat);
       basePlate.rotation.x = -Math.PI / 2;
       basePlate.position.set(fx, 0.5, fz);
-      parts.board.add(basePlate);
+      board.add(basePlate);
       const rotor = new THREE.Group();
       rotor.position.set(fx, boardY + 0.15, fz);
-      const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.42, 32), new THREE.MeshPhysicalMaterial({ color: 0x1d1e21, metalness: 0.6, roughness: 0.25, clearcoat: 0.8 }));
-      rotor.add(hub);
+      rotor.add(new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.42, 32), new THREE.MeshPhysicalMaterial({ color: 0x1d1e21, metalness: 0.6, roughness: 0.25, clearcoat: 0.8 })));
       for (let b = 0; b < 31; b++) {
-        const blade = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.36, 0.05), bladeMat);
+        const blade = new THREE.Mesh(bladeGeo, bladeMat);
         const a = (b / 31) * Math.PI * 2;
         blade.position.set(Math.cos(a) * 1.7, 0, Math.sin(a) * 1.7);
         blade.rotation.y = -a + 0.5;
         rotor.add(blade);
       }
-      parts.board.add(rotor);
+      board.add(rotor);
       fanBlades.push(rotor);
+      piece(rotor, [0, 1.7, 0], 0.42, 0.82);
+      if (s > 0) anchors.fans = { obj: rotor, v: new THREE.Vector3(0, 0.3, 0) };
       const pipe = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
         new THREE.Vector3(s * 1.4, boardY + 0.42, -5.6), new THREE.Vector3(s * 4.6, boardY + 0.42, -8.4),
         new THREE.Vector3(s * 8.4, boardY + 0.42, -8.2), new THREE.Vector3(fx - s * 2.2, boardY + 0.42, fz - 1.4)
       ]), 48, 0.2, 12, false), new THREE.MeshStandardMaterial({ color: 0xb87333, metalness: 1, roughness: 0.32, envMapIntensity: 0.7 }));
       pipe.scale.y = 0.6;
-      parts.board.add(pipe);
+      thermal.add(pipe);
     });
-    anchors.fans = new THREE.Vector3(11.4, boardY + 0.5, -6.2);
-    anchors.keyboard = new THREE.Vector3(-6, BH + 0.14, -5);
+    // dozens of tiny SMD parts (capacitors, resistors, inductors) that scatter up off the board like dust
+    const SMD = 140;
+    const smd = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ roughness: 0.45, metalness: 0.35, envMapIntensity: 0.5 }), SMD);
+    smd.frustumCulled = false;
+    const smdHome = [];
+    {
+      let seed = 11;
+      const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+      const tints = [0xb79b72, 0x121213, 0x121213, 0x8f9096, 0xc9a05c];
+      for (let i = 0; i < SMD; i++) {
+        let x, z, tries = 0;
+        do { x = -9.3 + rnd() * 18.6; z = -9.0 + rnd() * 8.6; tries++; }
+        while (tries < 20 && chips.some((c) => Math.abs(x - c.x) < c.w / 2 + 0.3 && Math.abs(z - c.z) < c.d / 2 + 0.4));
+        const big = rnd() > 0.85;
+        smdHome.push({ x, z, sx: big ? 0.5 : 0.16 + rnd() * 0.12, sy: big ? 0.22 : 0.08, sz: big ? 0.5 : 0.28 + rnd() * 0.1,
+          rot: rnd() > 0.5 ? Math.PI / 2 : 0, lift: 0.9 + rnd() * 2.6, a: 0.34 + rnd() * 0.2, tumble: rnd() * 2 - 1 });
+        smd.setColorAt(i, new THREE.Color(tints[Math.floor(rnd() * tints.length)]));
+      }
+    }
+    board.add(smd);
+    const sm = new THREE.Matrix4(), sq = new THREE.Quaternion(), se = new THREE.Euler(), sp = new THREE.Vector3(), ss3 = new THREE.Vector3();
+    const smdUpdate = (t) => {
+      smdHome.forEach((h, i) => {
+        const l = smoother(THREE.MathUtils.clamp((t - h.a) / 0.4, 0, 1));
+        se.set(h.tumble * Math.sin(Math.PI * l) * 0.9, h.rot + h.tumble * l * 1.2, 0);
+        sq.setFromEuler(se);
+        sp.set(h.x, boardY + h.sy / 2 + h.lift * l, h.z);
+        ss3.set(h.sx, h.sy, h.sz);
+        sm.compose(sp, sq, ss3);
+        smd.setMatrixAt(i, sm);
+      });
+      smd.instanceMatrix.needsUpdate = true;
+    };
+    smdUpdate(0);
+
+    // copper plate over the SoC that the pipes start from
+    const coldPlate = new THREE.Mesh(new RoundedBoxGeometry(4.6, 0.12, 4.6, 2, 0.05), new THREE.MeshStandardMaterial({ color: 0xc07a45, metalness: 1, roughness: 0.28, envMapIntensity: 0.7 }));
+    coldPlate.position.set(0, boardY + 0.26, -5.6);
+    thermal.add(coldPlate);
+    piece(thermal, [0, 3.6, 0], 0.36, 0.78);
+    [[-9.2, -1.6], [-2.6, -1.4], [2.6, -1.4], [9.2, -1.6], [-9.2, -8.6], [9.2, -8.6]].forEach(([x, z], i) => {
+      const sc = makeScrew();
+      sc.position.set(x, boardY + 0.04, z);
+      board.add(sc);
+      piece(sc, [0, 5.4, 0], 0.3 + i * 0.02, 0.72, { spin: 8 });
+    });
+
+    // --- top case: the aluminium shell under the keyboard (the deck carries keys, trackpad, grilles)
+    const topGeo = slab(W, D, BH - TRAY, R, 0.14);
+    topGeo.rotateX(-Math.PI / 2);
+    const top = add(new THREE.Mesh(topGeo, alu));
+    top.position.y = TRAY;
+    const deckTo = [0, 12, -13];
+    piece(top, deckTo, 0.12, 0.64);
+    piece(deck, deckTo, 0.12, 0.64);
+
+    // backlight plate under the keys: warm light bleeding round every keycap
+    const glowTex = canvasTexture(Math.round(wellW * 40), Math.round(wellD * 40), (g, cw, ch) => {
+      g.fillStyle = "#08080a"; g.fillRect(0, 0, cw, ch);
+      g.shadowColor = "rgba(255,206,130,1)"; g.shadowBlur = 7;
+      g.strokeStyle = "rgba(255,238,210,.9)"; g.lineWidth = 1.6;
+      keySlots.forEach((k) => {
+        const x = (k.x - k.w / 2 + wellW / 2) * 40, y = (k.z - k.d / 2 - (wellZ - wellD / 2)) * 40;
+        roundRectPath(g, x + 2, y + 2, k.w * 40 - 4, k.d * 40 - 4, 6);
+        g.fillStyle = "rgba(255,214,160,.13)"; g.fill();
+        g.stroke();
+      });
+    });
+    const glowPlate = plate(wellW, wellD, 0.45, new THREE.MeshBasicMaterial({ map: glowTex, toneMapped: false }));
+    glowPlate.rotation.x = -Math.PI / 2;
+    glowPlate.position.set(0, BH + 0.03, wellZ);
+    glowPlate.visible = false;
+    onlyExploded.push(glowPlate);
+    deck.add(glowPlate);
+    piece(glowPlate, [0, 2.2, 0], 0.2, 0.66);
+
+    // trackpad glass lifts off its well; the hinge barrel floats back toward the lid
+    piece(pad, [0, 2.4, 6.5], 0.26, 0.7);
+    piece(hinge, [0, 2.4, -4.5], 0.16, 0.6);
+
+    // display: back shell, mini-LED backlight, then the glass with the live screen
+    const ledTex = canvasTexture(1024, 660, (g, w, h) => {
+      g.fillStyle = "#050506"; g.fillRect(0, 0, w, h);
+      for (let y = 10; y < h; y += 20) for (let x = 10; x < w; x += 20) {
+        const gr = g.createRadialGradient(x, y, 0, x, y, 9);
+        gr.addColorStop(0, "rgba(255,246,232,.95)"); gr.addColorStop(.35, "rgba(255,226,190,.35)"); gr.addColorStop(1, "rgba(255,210,160,0)");
+        g.fillStyle = gr; g.fillRect(x - 10, y - 10, 20, 20);
+      }
+    });
+    const backlight = plate(SW, SH, 0.18, new THREE.MeshBasicMaterial({ map: ledTex, toneMapped: false }), 0.75);
+    backlight.position.set(0, SY, -0.02);
+    backlight.visible = false;
+    onlyExploded.push(backlight);
+    lid.add(backlight);
+    piece(backlight, [0, 0, 1.6], 0.3, 0.74);
+    piece(panel, [0, 0, 3.2], 0.3, 0.76);
+    piece(bezel, [0, 0, 3.2], 0.3, 0.76);
+    piece(anchor, [0, 0, 3.2], 0.3, 0.76);
+    piece(lid, [0, 18.5, -28], 0.04, 0.56);
+
+    anchors.keyboard = { obj: deck, v: new THREE.Vector3(-6, BH + 0.14, -5) };
+
+    // keycaps rise off the deck one by one in a ripple from the centre, tumbling a little on the way
+    const keyHome = keySlots.map((k) => {
+      const dist = Math.min(1, Math.hypot(k.x / 14, (k.z - wellZ) / 6) / 1.2);
+      return { k, a: 0.14 + 0.24 * dist, spin: (k.x * 7.3 + k.z * 3.1) % 1 };
+    });
+    const km = new THREE.Matrix4(), kq = new THREE.Quaternion(), ke = new THREE.Euler(), kp = new THREE.Vector3(), ks = new THREE.Vector3();
+    keys.frustumCulled = false;
+    explodeExtras = (t) => {
+      smdUpdate(t);
+      keyHome.forEach((h, i) => {
+        const l = smoother(THREE.MathUtils.clamp((t - h.a) / 0.36, 0, 1));
+        const wob = Math.sin(Math.PI * l);
+        ke.set(wob * 0.5 * (h.spin - 0.5), 0, wob * 0.35 * (0.5 - h.spin));
+        kq.setFromEuler(ke);
+        kp.set(h.k.x, BH + 0.07 + 5.2 * l, h.k.z);
+        ks.set(h.k.w, 1, h.k.d);
+        km.compose(kp, kq, ks);
+        keys.setMatrixAt(i, km);
+      });
+      keys.instanceMatrix.needsUpdate = true;
+      legendPlane.material.opacity = 0.8 * (1 - THREE.MathUtils.smoothstep(t, 0.1, 0.2));
+      legendPlane.visible = legendPlane.material.opacity > 0.01;
+      const shadowL = smoother(THREE.MathUtils.clamp((t - 0.34) / 0.52, 0, 1));
+      shadow.position.y = -0.02 - 3.6 * shadowL;
+      shadow.position.z = 11 * shadowL;
+    };
   }
 
   // t: 0 assembled … 1 fully exploded; spin: fan rotation in radians
   function setExplode(t, spin) {
-    if (!parts) return;
-    const on = t > 0.001;
+    if (!internals) return;
+    const on = t > 0.12;
     base.visible = !on;
-    Object.values(parts).forEach((g) => { g.visible = on; });
-    // staircase: each layer rises and slides back so the one below stays visible
-    parts.tray.position.set(0, -2.5 * t, 9 * t);
-    parts.battery.position.set(0, 1.2 * t, 5 * t);
-    parts.board.position.set(0, 5.2 * t, -1 * t);
-    parts.topcase.position.set(0, 12 * t, -15 * t);
-    deck.position.set(0, 12 * t, -15 * t);
-    lid.position.y = BH + 0.035 + 17 * t;
-    lid.position.z = -D / 2 + 0.46 - 25 * t;
+    internals.visible = on;
+    onlyExploded.forEach((o) => { o.visible = on; });
+    pieces.forEach((p) => {
+      const l = smoother(THREE.MathUtils.clamp((t - p.a) / (p.b - p.a), 0, 1));
+      p.obj.position.copy(p.home).addScaledVector(p.to, l);
+      if (p.spin) p.obj.rotation.y = p.spin * l;
+    });
+    explodeExtras(t);
     fanBlades.forEach((r, i) => { r.rotation.y = (i ? -1 : 1) * (spin || 0); });
   }
   // project named anchors to pixel coordinates inside the host
@@ -550,9 +739,9 @@ export function createMacbook(host, screenEl, opts = {}) {
   function project(name) {
     const a = anchors[name];
     if (!a) return null;
-    const g = name === "battery" ? parts.battery : name === "keyboard" ? deck : parts.board;
-    proj.copy(a);
-    g.localToWorld(proj);
+    root.updateMatrixWorld(true);
+    proj.copy(a.v);
+    a.obj.localToWorld(proj);
     proj.project(camera);
     return { x: (proj.x * 0.5 + 0.5) * size.w, y: (-proj.y * 0.5 + 0.5) * size.h, behind: proj.z > 1 };
   }
@@ -578,9 +767,6 @@ export function createMacbook(host, screenEl, opts = {}) {
   scene.add(softSide);
 
   // ----- DOM screen glued to the lid
-  const anchor = new THREE.Object3D();
-  anchor.position.set(0, SY, 0.012);
-  lid.add(anchor);
   screenEl.classList.add("is-3d");
   screenEl.style.width = SCREEN_PX.w + "px";
   screenEl.style.height = SCREEN_PX.h + "px";
@@ -867,5 +1053,506 @@ export function createIphone(host, screenEl, opts = {}) {
   return { render, resize, camera, DIM: PH };
 }
 
-window.MacBook3D = { createMacbook, createIphone };
+// ---------------------------------------------------------------------------------------------
+// Automatic watch in 18k gold with a see-through movement. Built from real parts (case, bezel,
+// sapphire, dial with applied indices, hands, main plate, gear train, balance wheel, bridges,
+// rubies, blued screws, rotor, case back) so it can come apart piece by piece like a watchmaker's
+// exploded view. Units are millimetres; the watch faces +z.
+function gearShape(R, teeth, depth, hub, spokes, rim, pointed) {
+  const s = new THREE.Shape();
+  const N = teeth * 4;
+  for (let i = 0; i <= N; i++) {
+    const a = (i / N) * Math.PI * 2, ph = i % 4;
+    const r = pointed ? (ph === 1 ? R : R - depth) : (ph === 1 || ph === 2 ? R : R - depth);
+    const x = Math.cos(a) * r, y = Math.sin(a) * r;
+    if (i) s.lineTo(x, y); else s.moveTo(x, y);
+  }
+  const rIn = hub, rOut = R - depth - rim;
+  if (spokes && rOut - rIn > 0.6) {
+    for (let k = 0; k < spokes; k++) {
+      const sw = 0.55 / rIn, swo = 0.55 / rOut;
+      const a0 = (k / spokes) * Math.PI * 2, a1 = ((k + 1) / spokes) * Math.PI * 2;
+      const h = new THREE.Path();
+      h.absarc(0, 0, rOut, a0 + swo, a1 - swo, false);
+      h.absarc(0, 0, rIn, a1 - sw, a0 + sw, true);
+      h.closePath();
+      s.holes.push(h);
+    }
+  }
+  const pin = new THREE.Path();
+  pin.absarc(0, 0, Math.min(0.45, hub * 0.4), 0, Math.PI * 2, true);
+  s.holes.push(pin);
+  return s;
+}
+// a bridge outline around two pivots
+function capsule(x1, y1, r1, x2, y2, r2) {
+  const s = new THREE.Shape(), t = Math.atan2(y2 - y1, x2 - x1);
+  s.absarc(x1, y1, r1, t + Math.PI / 2, t + Math.PI * 1.5, false);
+  s.absarc(x2, y2, r2, t - Math.PI / 2, t + Math.PI / 2, false);
+  s.closePath();
+  return s;
+}
+function ring(rIn, rOut, seg = 128) {
+  const s = new THREE.Shape();
+  s.absarc(0, 0, rOut, 0, Math.PI * 2, false);
+  const h = new THREE.Path();
+  h.absarc(0, 0, rIn, 0, Math.PI * 2, true);
+  s.holes.push(h);
+  return s;
+}
+function revolve(profile, seg = 160) {
+  const g = new THREE.LatheGeometry(profile.map(([r, z]) => new THREE.Vector2(r, z)), seg);
+  g.rotateX(Math.PI / 2);          // lathe axis (y) → watch axis (z)
+  return g;
+}
+
+export function createWatch(host, opts = {}) {
+  const narrow = window.innerWidth <= 860;
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, MAX_DPR));
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.AgXToneMapping;
+  renderer.toneMappingExposure = 1.0;
+  renderer.domElement.className = "mb3d__gl";
+  host.appendChild(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+  loadHdri().then((hdr) => {
+    scene.environment = pmrem.fromEquirectangular(hdr).texture;
+    if (opts.onNeedsRender) opts.onNeedsRender();
+  });
+  const camera = new THREE.PerspectiveCamera(22, 1, 1, 2000);
+  const size = { w: 1, h: 1 };
+
+  // ----- materials: 18k yellow gold, rhodium-plated movement, blued steel, rubies, sapphire
+  const gold = new THREE.MeshPhysicalMaterial({ color: 0xe9bb70, metalness: 1, roughness: 0.2, envMapIntensity: 0.9, clearcoat: 0.3, clearcoatRoughness: 0.15 });
+  const goldSatin = new THREE.MeshStandardMaterial({ color: 0xdcae66, metalness: 1, roughness: 0.38, envMapIntensity: 0.8 });
+  const brass = new THREE.MeshStandardMaterial({ color: 0xd8a24f, metalness: 1, roughness: 0.3, envMapIntensity: 0.85 });
+  const steelPol = new THREE.MeshStandardMaterial({ color: 0xd4d7dc, metalness: 1, roughness: 0.14, envMapIntensity: 0.8 });
+  const blued = new THREE.MeshPhysicalMaterial({ color: 0x2a4fb0, metalness: 1, roughness: 0.22, envMapIntensity: 1.1, clearcoat: 0.6 });
+  const ruby = new THREE.MeshPhysicalMaterial({ color: 0xc0122e, metalness: 0, roughness: 0.06, clearcoat: 1, clearcoatRoughness: 0.02, envMapIntensity: 1.4, emissive: 0x3a0008, sheen: 0.4, sheenColor: 0xff4060 });
+  // sapphire: a thin, clear reflective layer (cheaper and more predictable than a transmission pass)
+  const sapphire = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 0, roughness: 0.02, transparent: true, opacity: 0.07, envMapIntensity: 0.6, depthWrite: false });
+  // côtes de Genève on the bridges and perlage on the main plate, as colour + roughness maps
+  const stripes = canvasTexture(512, 512, (g, w, h) => {
+    for (let x = -h; x < w + h; x += 64) {
+      const gr = g.createLinearGradient(x, 0, x + 64, 0);
+      gr.addColorStop(0, "#9ea2a8"); gr.addColorStop(0.5, "#e4e6ea"); gr.addColorStop(1, "#9ea2a8");
+      g.save(); g.translate(x, 0); g.transform(1, 0, -0.35, 1, 0, 0); g.fillStyle = gr; g.fillRect(0, 0, 64, h * 1.5); g.restore();
+    }
+  });
+  stripes.wrapS = stripes.wrapT = THREE.RepeatWrapping;
+  stripes.repeat.set(1 / 7, 1 / 7);
+  const bridgeMat = new THREE.MeshStandardMaterial({ map: stripes, color: 0xffffff, metalness: 1, roughness: 0.26, envMapIntensity: 0.75 });
+  const perlage = canvasTexture(1024, 1024, (g, w, h) => {
+    g.fillStyle = "#b8bbc1"; g.fillRect(0, 0, w, h);
+    let seed = 5;
+    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    for (let y = 0; y < h + 30; y += 26) for (let x = (y / 26) % 2 ? 13 : 0; x < w + 30; x += 26) {
+      const gr = g.createRadialGradient(x - 4, y - 4, 1, x, y, 21);
+      gr.addColorStop(0, "#eef0f3"); gr.addColorStop(0.55, "#a9adb4"); gr.addColorStop(1, "rgba(150,154,160,0)");
+      g.fillStyle = gr; g.beginPath(); g.arc(x + rnd() * 2, y + rnd() * 2, 21, 0, Math.PI * 2); g.fill();
+    }
+  });
+  const plateMat = new THREE.MeshStandardMaterial({ map: perlage, metalness: 1, roughness: 0.3, envMapIntensity: 0.7 });
+
+  const root = new THREE.Group();
+  scene.add(root);
+  const pieces = [];
+  const anchors = {};
+  const piece = (obj, to, a, b, extra) => {
+    root.add(obj);
+    const p = Object.assign({ obj, home: obj.position.clone(), to: new THREE.Vector3(...to), a, b, rot0: obj.rotation.z }, extra || {});
+    pieces.push(p);
+    return p;
+  };
+  const ext = (shape, depth, bevel = 0.08) => {
+    const g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: bevel > 0, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 3, curveSegments: 48 });
+    g.translate(0, 0, -depth / 2);
+    return g;
+  };
+
+  // ----- case middle with lugs and crown
+  const caseG = new THREE.Group();
+  caseG.add(new THREE.Mesh(revolve([[16.6, -4.2], [18.4, -4.6], [19.7, -3.8], [20.4, -1.6], [20.5, 0.4], [20.1, 2.6], [19.2, 3.6], [16.9, 3.7], [16.6, 3.2], [16.6, -4.2]]), gold));
+  // lugs: horns that grow out of the case band and curve down toward the wrist
+  const horn = new THREE.Shape();
+  [[14.5, 3.3], [18.5, 3.2], [21.6, 2.3], [24.2, 0.6], [25.2, -1.2], [24.9, -3.0], [23.4, -3.7], [19.5, -4.0], [14.5, -4.2]]
+    .forEach(([u, v], i) => (i ? horn.lineTo(u, v) : horn.moveTo(u, v)));
+  horn.closePath();
+  const hornGeo = new THREE.ExtrudeGeometry(horn, { depth: 2.6, bevelEnabled: true, bevelThickness: 0.55, bevelSize: 0.55, bevelSegments: 6, curveSegments: 24 });
+  hornGeo.translate(0, 0, -1.3);
+  hornGeo.applyMatrix4(new THREE.Matrix4().set(0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1));   // (u, v, depth) → (y, z, x)
+  hornGeo.computeVertexNormals();
+  [0, Math.PI].forEach((rot) => [-1, 1].forEach((sx) => {
+    const lug = new THREE.Mesh(hornGeo, gold);
+    lug.position.x = sx * 10.6;
+    const pivot = new THREE.Group();
+    pivot.rotation.z = rot;
+    pivot.add(lug);
+    caseG.add(pivot);
+  }));
+  piece(caseG, [0, 0, 0], 0, 1);
+
+  const crown = new THREE.Group();
+  const crownBody = new THREE.Mesh(new THREE.CylinderGeometry(3.1, 3.1, 3.4, 64, 1), gold);
+  crownBody.rotation.z = Math.PI / 2;
+  crownBody.position.x = 2.4;
+  crown.add(crownBody);
+  for (let k = 0; k < 28; k++) {            // knurled grip
+    const r = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.22, 0.22), goldSatin);
+    const a = (k / 28) * Math.PI * 2;
+    r.position.set(2.4, Math.cos(a) * 3.12, Math.sin(a) * 3.12);
+    r.rotation.x = a;
+    crown.add(r);
+  }
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 2.6, 24), goldSatin);
+  stem.rotation.z = Math.PI / 2;
+  crown.add(stem);
+  crown.position.set(20.2, 0, 0);
+  piece(crown, [16, 0, 4], 0.12, 0.56);
+
+  // ----- bezel and sapphire crystal
+  const bezel = new THREE.Mesh(revolve([[16.1, 3.6], [19.3, 3.6], [19.15, 4.6], [18.2, 5.5], [16.6, 5.7], [16.1, 5.1], [16.1, 3.6]]), gold);
+  piece(bezel, [0, 0, 34], 0.06, 0.52);
+  const crystal = new THREE.Mesh(revolve([[0, 6.6], [8, 6.45], [14, 6.05], [16.3, 5.6], [16.3, 4.6], [0, 4.6]], 128), sapphire);
+  crystal.renderOrder = 3;
+  piece(crystal, [0, 0, 46], 0.02, 0.48);
+
+  // ----- dial: black lacquer sunburst with a minute track, AV monogram and calibre line
+  const paintDial = (g, w, h) => {
+    const c = w / 2;
+    g.fillStyle = "#0c0c0f"; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 1440; i++) {               // sunburst brushing
+      const a = (i / 1440) * Math.PI * 2;
+      g.strokeStyle = "rgba(255,255,255," + (0.015 + 0.05 * Math.pow(Math.abs(Math.cos(a - 0.7)), 6)).toFixed(3) + ")";
+      g.lineWidth = 2;
+      g.beginPath(); g.moveTo(c, c); g.lineTo(c + Math.cos(a) * c, c + Math.sin(a) * c); g.stroke();
+    }
+    const R = c * 0.985;
+    g.strokeStyle = "rgba(233,205,150,.75)";
+    for (let i = 0; i < 60; i++) {                 // minute track
+      const a = (i / 60) * Math.PI * 2, big = i % 5 === 0;
+      g.lineWidth = big ? 5 : 2.5;
+      g.beginPath();
+      g.moveTo(c + Math.cos(a) * R * 0.955, c + Math.sin(a) * R * 0.955);
+      g.lineTo(c + Math.cos(a) * R * (big ? 0.905 : 0.925), c + Math.sin(a) * R * (big ? 0.905 : 0.925));
+      g.stroke();
+    }
+    g.textAlign = "center"; g.textBaseline = "middle";
+    g.fillStyle = "#e9cd96";
+    g.font = "italic 600 190px 'Cormorant Garamond', Georgia, serif";
+    g.fillText("AV", c, c - R * 0.36);
+    g.font = "500 44px 'JetBrains Mono', Consolas, monospace";
+    g.fillStyle = "rgba(233,205,150,.8)";
+    g.fillText("AUTOMATIC", c, c - R * 0.2);
+    g.font = "500 36px 'JetBrains Mono', Consolas, monospace";
+    g.fillStyle = "rgba(255,255,255,.55)";
+    g.fillText("CALIBRE 19 · RUSE", c, c + R * 0.42);
+  };
+  const dialTex = canvasTexture(2048, 2048, paintDial);
+  dialTex.center.set(0.5, 0.5);
+  dialTex.rotation = Math.PI / 2;      // cylinder caps map u/v sideways: turn 12 o'clock to the top
+  const dialMat = new THREE.MeshPhysicalMaterial({ map: dialTex, metalness: 0, roughness: 0.34, clearcoat: 0.25, clearcoatRoughness: 0.1, envMapIntensity: 0.06 });
+  const dial = new THREE.Mesh(new THREE.CylinderGeometry(16.4, 16.4, 0.5, 128), [new THREE.MeshStandardMaterial({ color: 0x0c0c0f, roughness: 0.4 }), dialMat, dialMat]);
+  dial.rotation.x = Math.PI / 2;
+  dial.position.z = 2.2;
+  const dialG = new THREE.Group();
+  dialG.add(dial);
+  piece(dialG, [0, 0, 12], 0.2, 0.66);
+  // the serif and mono faces may still be loading: paint the dial and engravings again once they are in
+  const repaint = [];
+  const onFonts = (tex, painter) => repaint.push([tex, painter]);
+  onFonts(dialTex, paintDial);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => {
+    repaint.forEach(([tex, painter]) => {
+      const c = tex.image, g = c.getContext("2d");
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.clearRect(0, 0, c.width, c.height);
+      painter(g, c.width, c.height);
+      tex.needsUpdate = true;
+    });
+    if (opts.onNeedsRender) opts.onNeedsRender();
+  });
+
+  // applied gold indices: each one is its own piece and lifts off the dial on its own
+  for (let i = 0; i < 12; i++) {
+    const a = Math.PI / 2 - (i / 12) * Math.PI * 2;
+    const double = i === 0;
+    const idx = new THREE.Group();
+    const bar = new RoundedBoxGeometry(double ? 0.85 : 1.1, 3.4, 0.7, 2, 0.25);
+    [double ? [-0.75, 0.75] : [0]].flat().forEach((off) => {
+      const m = new THREE.Mesh(bar, gold);
+      m.position.x = off;
+      idx.add(m);
+    });
+    idx.position.set(Math.cos(a) * 12.6, Math.sin(a) * 12.6, 2.8);
+    idx.rotation.z = a - Math.PI / 2;
+    piece(idx, [Math.cos(a) * 3.5, Math.sin(a) * 3.5, 18], 0.16 + i * 0.012, 0.62 + i * 0.01);
+  }
+
+  // ----- hands: dauphine hour and minute, a thin sweeping seconds hand with a counterweight
+  const handShape = (len, wid, tail) => {
+    const s = new THREE.Shape();
+    s.moveTo(0, -tail); s.lineTo(wid / 2, 0); s.lineTo(0, len); s.lineTo(-wid / 2, 0); s.closePath();
+    return s;
+  };
+  const hourH = new THREE.Mesh(ext(handShape(8.6, 1.5, 1.6), 0.2, 0.06), gold);
+  const minH = new THREE.Mesh(ext(handShape(13.2, 1.15, 1.8), 0.2, 0.06), gold);
+  const secShape = new THREE.Shape();
+  secShape.moveTo(-0.13, -4); secShape.lineTo(0.13, -4); secShape.lineTo(0.08, 14.6); secShape.lineTo(-0.08, 14.6); secShape.closePath();
+  const secH = new THREE.Group();
+  secH.add(new THREE.Mesh(ext(secShape, 0.12, 0.03), gold));
+  const cw = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.75, 0.16, 32), gold);
+  cw.rotation.x = Math.PI / 2; cw.position.y = -3.2;
+  secH.add(cw);
+  const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.5, 32), gold);
+  cap.rotation.x = Math.PI / 2;
+  [[hourH, 3.4, 22], [minH, 3.75, 26], [secH, 4.05, 30]].forEach(([h, z, lift], i) => {
+    h.position.z = z;
+    piece(h, [0, 0, lift], 0.08 + i * 0.03, 0.54 + i * 0.03, { hand: i });
+  });
+  cap.position.z = 4.25;
+  piece(cap, [0, 0, 31], 0.1, 0.58);
+  anchors.hands = { obj: minH, v: new THREE.Vector3(0, 10, 0.2) };
+
+  // ----- movement: main plate, gear train, barrel, balance, bridges, rubies and blued screws
+  const plate = new THREE.Mesh(new THREE.CylinderGeometry(16.2, 16.2, 1.4, 128), [new THREE.MeshStandardMaterial({ color: 0xa8acb2, metalness: 1, roughness: 0.35 }), plateMat, plateMat]);
+  plate.rotation.x = Math.PI / 2;
+  plate.position.z = 0.9;
+  piece(plate, [0, 0, -6], 0.22, 0.7);
+
+  const wheels = [];
+  const wheel = (x, y, z, R, teeth, mat, spokes, toZ, a, speed, pointed) => {
+    const g = new THREE.Group();
+    g.add(new THREE.Mesh(ext(gearShape(R, teeth, Math.min(0.55, R * 0.09), Math.max(0.9, R * 0.22), spokes, 0.7, pointed), 0.32, 0.05), mat));
+    const arbor = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 2.4, 16), steelPol);
+    arbor.rotation.x = Math.PI / 2;
+    g.add(arbor);
+    // pinion
+    const pin = new THREE.Mesh(ext(gearShape(Math.max(0.9, R * 0.2), 8, 0.22, 0.3, 0, 0), 0.6, 0), steelPol);
+    pin.position.z = -0.55;
+    g.add(pin);
+    g.position.set(x, y, z);
+    const p = piece(g, [0, 0, toZ], a, a + 0.42, { speed });
+    wheels.push(p);
+    return g;
+  };
+  // barrel (mainspring) with its steel ratchet wheel on top
+  const barrel = wheel(5.6, 5.0, -0.6, 6.6, 70, brass, 0, -12, 0.26, 0.05);
+  const ratchet = new THREE.Mesh(ext(gearShape(4.6, 40, 0.4, 1.2, 0, 0, true), 0.4, 0.04), steelPol);
+  ratchet.position.z = -0.5;
+  barrel.add(ratchet);
+  wheel(0, 0, -0.9, 5.4, 64, goldSatin, 4, -16, 0.29, 0.3);            // centre wheel
+  wheel(-6.2, 3.6, -0.7, 4.2, 60, goldSatin, 4, -19, 0.32, 1.4);       // third wheel
+  wheel(-7.6, -2.8, -0.9, 3.8, 56, goldSatin, 4, -22, 0.35, 6);        // fourth wheel (seconds)
+  const esc = wheel(-3.4, -7.8, -0.7, 2.7, 15, steelPol, 5, -25, 0.38, 30, true);   // escape wheel
+  anchors.gears = { obj: esc, v: new THREE.Vector3(0, 0, 0) };
+
+  // pallet fork
+  const fork = new THREE.Mesh(ext(capsule(-1.6, 0, 0.45, 1.6, 0.9, 0.45), 0.26, 0.04), steelPol);
+  fork.position.set(1.0, -9.4, -0.8);
+  fork.rotation.z = 0.3;
+  piece(fork, [0, 0, -27], 0.4, 0.8);
+
+  // balance wheel with spokes, timing screws and a blued hairspring; it beats while you watch
+  const balance = new THREE.Group();
+  balance.add(new THREE.Mesh(new THREE.TorusGeometry(4.3, 0.42, 16, 96), gold));
+  for (let k = 0; k < 3; k++) {
+    const sp = new THREE.Mesh(new THREE.BoxGeometry(8.4, 0.5, 0.3), gold);
+    sp.rotation.z = (k / 3) * Math.PI;
+    balance.add(sp);
+  }
+  for (let k = 0; k < 8; k++) {
+    const ts = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.6, 12), gold);
+    const a = (k / 8) * Math.PI * 2;
+    ts.position.set(Math.cos(a) * 4.75, Math.sin(a) * 4.75, 0);
+    ts.rotation.z = a + Math.PI / 2;
+    balance.add(ts);
+  }
+  const spiral = [];
+  for (let i = 0; i <= 600; i++) {
+    const t = i / 600, a = t * Math.PI * 2 * 11, r = 0.9 + t * 2.7;
+    spiral.push(new THREE.Vector3(Math.cos(a) * r, Math.sin(a) * r, -0.5));
+  }
+  balance.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(spiral), 1200, 0.05, 5, false), blued));
+  balance.position.set(7.4, -6.6, -1.2);
+  const balanceP = piece(balance, [0, 0, -30], 0.42, 0.84);
+  anchors.balance = { obj: balance, v: new THREE.Vector3(4.3, 0, 0) };
+
+  // bridges: barrel bridge, train bridge and balance cock
+  const bridges = [
+    [capsule(5.6, 5.0, 7.0, 0, 0, 3.4), -2.6, -36, 0.3],
+    [capsule(-6.2, 3.6, 3.0, -3.4, -7.8, 2.6), -2.6, -38, 0.34],
+    [capsule(7.4, -6.6, 2.2, 13.0, -1.6, 2.6), -3.0, -42, 0.38]
+  ];
+  bridges.forEach(([shape, z, toZ, a]) => {
+    const b = new THREE.Mesh(ext(shape, 0.9, 0.12), bridgeMat);
+    b.position.z = z;
+    piece(b, [0, 0, toZ], a, a + 0.42);
+  });
+
+  // rubies in gold chatons over every pivot, and blued screws: each flies out on its own
+  const jewelGeo = new THREE.CylinderGeometry(0.62, 0.62, 0.34, 32);
+  const chatonGeo = new THREE.TorusGeometry(0.75, 0.16, 10, 32);
+  [[5.6, 5.0], [0, 0], [-6.2, 3.6], [-7.6, -2.8], [-3.4, -7.8], [7.4, -6.6], [1.0, -9.4], [-3.0, 8.6], [9.6, 9.0], [-10.6, -6.6]].forEach(([x, y], i) => {
+    const j = new THREE.Group();
+    const stone = new THREE.Mesh(jewelGeo, ruby);
+    stone.rotation.x = Math.PI / 2;
+    j.add(stone);
+    j.add(new THREE.Mesh(chatonGeo, gold));
+    j.position.set(x, y, -3.3);
+    piece(j, [x * 0.12, y * 0.12, -46 - (i % 3) * 3], 0.36 + i * 0.02, 0.82 + i * 0.01);
+    if (i === 1) anchors.jewels = { obj: j, v: new THREE.Vector3(0, 0, 0) };
+  });
+  const screwG = new THREE.CylinderGeometry(0.85, 0.85, 0.5, 32);
+  const slotG = new THREE.BoxGeometry(1.5, 0.22, 0.2);
+  [[10.4, 7.2], [1.8, 9.6], [-9.6, 6.6], [-11.6, -1.0], [-1.0, -11.0], [13.6, -3.4], [4.4, -1.4], [-4.6, 9.8]].forEach(([x, y], i) => {
+    const sc = new THREE.Group();
+    const head = new THREE.Mesh(screwG, blued);
+    head.rotation.x = Math.PI / 2;
+    sc.add(head);
+    const slot = new THREE.Mesh(slotG, new THREE.MeshStandardMaterial({ color: 0x0a1020, roughness: 0.6 }));
+    slot.position.z = -0.2;
+    sc.add(slot);
+    sc.position.set(x, y, -3.4);
+    sc.rotation.z = i * 0.7;
+    piece(sc, [x * 0.2, y * 0.2, -52 - (i % 2) * 4], 0.34 + i * 0.02, 0.8 + i * 0.01, { spin: (i % 2 ? 1 : -1) * 7 });
+  });
+
+  // ----- winding rotor: a gold half-moon with the signature engraved
+  const rotorShape = new THREE.Shape();
+  rotorShape.absarc(0, 0, 15.6, Math.PI * 0.05, Math.PI * 0.95, false);
+  rotorShape.absarc(0, 0, 2.2, Math.PI * 0.95, Math.PI * 0.05, true);
+  rotorShape.closePath();
+  const rotorG = new THREE.Group();
+  rotorG.add(new THREE.Mesh(ext(rotorShape, 0.7, 0.14), gold));
+  const paintEngr = (g, w, h) => {
+    g.clearRect(0, 0, w, h);
+    g.fillStyle = "#fff";
+    g.textAlign = "center";
+    g.font = "italic 600 120px 'Cormorant Garamond', Georgia, serif";
+    g.fillText("Anatoli Valev", w / 2, h * 0.5);
+    g.font = "500 34px 'JetBrains Mono', Consolas, monospace";
+    g.fillText("AUTOMATIC · 28,800 A/H · 19 JEWELS", w / 2, h * 0.72);
+  };
+  const engr = canvasTexture(1024, 512, paintEngr, { linear: true });
+  onFonts(engr, paintEngr);
+  const engrave = new THREE.Mesh(new THREE.PlaneGeometry(20, 10), new THREE.MeshStandardMaterial({ color: 0x7a5a28, metalness: 1, roughness: 0.6, alphaMap: engr, transparent: true, depthWrite: false }));
+  engrave.position.set(0, 8.4, -0.5);
+  engrave.rotation.y = Math.PI;
+  rotorG.add(engrave);
+  const hubR = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 1.2, 40), steelPol);
+  hubR.rotation.x = Math.PI / 2;
+  rotorG.add(hubR);
+  rotorG.position.z = -4.4;
+  const rotorP = piece(rotorG, [0, 0, -60], 0.44, 0.88);
+  anchors.rotor = { obj: rotorG, v: new THREE.Vector3(0, 11, -0.4) };
+
+  // ----- case back: gold ring with an engraved inscription and a sapphire window
+  const backG = new THREE.Group();
+  backG.add(new THREE.Mesh(revolve([[13.2, -4.4], [18.4, -4.4], [18.2, -5.6], [16.8, -6.3], [13.6, -6.2], [13.2, -5.6], [13.2, -4.4]]), gold));
+  const paintInsc = (g, w, h) => {
+    g.clearRect(0, 0, w, h);
+    g.translate(w / 2, h / 2);
+    g.fillStyle = "#fff";
+    g.font = "500 30px 'JetBrains Mono', Consolas, monospace";
+    const text = "SPECS · DECISIONS · REJECTED IDEAS — WRITTEN DOWN · NO. 001 · ";
+    for (let i = 0; i < text.length; i++) {
+      g.save(); g.rotate((i / text.length) * Math.PI * 2); g.fillText(text[i], 0, -h * 0.4); g.restore();
+    }
+  };
+  const insc = canvasTexture(1024, 1024, paintInsc, { linear: true });
+  onFonts(insc, paintInsc);
+  const inscM = new THREE.Mesh(new THREE.RingGeometry(13.5, 18.2, 128), new THREE.MeshStandardMaterial({ color: 0x6e5126, metalness: 1, roughness: 0.6, alphaMap: insc, transparent: true, depthWrite: false, side: THREE.DoubleSide }));
+  inscM.position.z = -6.32;
+  inscM.rotation.y = Math.PI;
+  backG.add(inscM);
+  const backGlass = new THREE.Mesh(new THREE.CylinderGeometry(13.4, 13.4, 1.0, 96), sapphire);
+  backGlass.rotation.x = Math.PI / 2;
+  backGlass.position.z = -5.4;
+  backG.add(backGlass);
+  piece(backG, [0, 0, -72], 0.48, 0.92);
+  anchors.caseback = { obj: backG, v: new THREE.Vector3(0, -16, -6.3) };
+
+  // ----- lights on top of the HDRI: a warm key, a cool rim, and a long softbox that draws lines on the gold
+  const key = new THREE.DirectionalLight(0xfff1de, 1.0);
+  key.position.set(40, 60, 80);
+  scene.add(key);
+  const rim = new THREE.DirectionalLight(0xbcd4ff, 1.2);
+  rim.position.set(-70, 20, -40);
+  scene.add(rim);
+  const soft = new THREE.RectAreaLight(0xfff4e6, 1.3, 120, 18);
+  soft.position.set(0, 70, 40);
+  soft.lookAt(0, 0, 0);
+  scene.add(soft);
+
+  // ----- explode and render
+  const smoother = (x) => x * x * x * (x * (x * 6 - 15) + 10);
+  let explode = 0;
+  function setExplode(t) {
+    explode = t;
+    pieces.forEach((p) => {
+      const l = smoother(THREE.MathUtils.clamp((t - p.a) / (p.b - p.a), 0, 1));
+      p.obj.position.copy(p.home).addScaledVector(p.to, l * (narrow ? 0.6 : 0.74));
+      if (p.spin) p.obj.rotation.z = p.rot0 + p.spin * l;
+    });
+  }
+  setExplode(0);
+
+  function resize() {
+    const r = host.getBoundingClientRect();
+    const w = Math.max(1, Math.round(r.width)), h = Math.max(1, Math.round(r.height));
+    size.w = w; size.h = h;
+    renderer.setSize(w, h);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  resize();
+
+  const look = new THREE.Vector3();
+  // state: { az, el (radians), dist, look: {x,y,z}, time (s) }
+  function render(state) {
+    const time = state.time || 0;
+    // real time on the dial, with an 8-beat sweep on the seconds hand
+    const now = new Date();
+    const sec = now.getSeconds() + Math.floor(now.getMilliseconds() / 125) / 8;
+    const min = now.getMinutes() + sec / 60, hr = (now.getHours() % 12) + min / 60;
+    hourH.rotation.z = -hr / 12 * Math.PI * 2;
+    minH.rotation.z = -min / 60 * Math.PI * 2;
+    secH.rotation.z = -sec / 60 * Math.PI * 2;
+    // the movement runs: balance beats at 4 Hz, the train turns with it, the rotor swings with scroll
+    balance.rotation.z = Math.sin(time * Math.PI * 2 * 1.25) * 2.1;
+    wheels.forEach((p, i) => { p.obj.rotation.z = (i % 2 ? -1 : 1) * time * p.speed * 0.25; });
+    rotorG.rotation.z = (state.rotor || 0);
+    look.set(state.look.x, state.look.y, state.look.z);
+    camera.position.set(
+      look.x + Math.sin(state.az) * Math.cos(state.el) * state.dist,
+      look.y + Math.sin(state.el) * state.dist,
+      look.z + Math.cos(state.az) * Math.cos(state.el) * state.dist
+    );
+    camera.lookAt(look);
+    renderer.render(scene, camera);
+  }
+  // distance at which a sphere of radius r fills `fill` of the smaller viewport side
+  function fitDistance(r, fill) {
+    const t = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+    return Math.max(r / (fill * t), r / (fill * t * camera.aspect));
+  }
+  const proj = new THREE.Vector3();
+  function project(name) {
+    const a = anchors[name];
+    if (!a) return null;
+    root.updateMatrixWorld(true);
+    proj.copy(a.v);
+    a.obj.localToWorld(proj);
+    proj.project(camera);
+    return { x: (proj.x * 0.5 + 0.5) * size.w, y: (-proj.y * 0.5 + 0.5) * size.h, behind: proj.z > 1 };
+  }
+  return { render, resize, setExplode, project, fitDistance, camera };
+}
+
+window.MacBook3D = { createMacbook, createIphone, createWatch };
 window.dispatchEvent(new Event("macbook3d-ready"));

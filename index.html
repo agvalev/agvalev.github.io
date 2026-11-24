@@ -13,8 +13,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700;800&family=Cormorant+Garamond:ital,wght@1,400;1,500;1,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20261124b" />
-  <link rel="stylesheet" href="motion.css?v=20261124b" />
+  <link rel="stylesheet" href="styles.css?v=20261124c" />
+  <link rel="stylesheet" href="motion.css?v=20261124c" />
   <script>
     // Apply saved language before paint; skip the preloader on repeat views in the same session.
     (function () {
@@ -681,8 +681,42 @@
       </div>
     </section>
 
-    <!-- PRINCIPLES -->
-    <section class="principles">
+    <!-- PRECISION: a gold automatic watch comes apart part by part; each part carries one of the principles -->
+    <section class="watch" id="principles" aria-label="How I work">
+      <div class="watch__track" id="watchTrack">
+        <div class="watch__sticky">
+          <div class="watch__glow" aria-hidden="true"></div>
+          <div class="wrap watch__head">
+            <p class="label"><span class="label__num">(07)</span> <span lang="en">Principles</span><span lang="bg">Принципи</span></p>
+            <h2 class="watch__title"><span lang="en">Built like <em>a timepiece.</em></span><span lang="bg">Изработено като <em>часовник.</em></span></h2>
+            <p class="watch__sub"><span lang="en">Every part has a job. This is how I work.</span><span lang="bg">Всяка част има своята роля. Ето как работя.</span></p>
+          </div>
+          <div class="mb3d" id="watch3d" aria-hidden="true"></div>
+          <div class="callouts watch__callouts">
+            <div class="co" data-anchor="balance"><i class="co__dot"></i><i class="co__line"></i>
+              <div class="co__box"><span class="co__k">I — <span lang="en">Balance wheel</span><span lang="bg">Баланс</span></span><b lang="en">Tests before trust</b><b lang="bg">Първо тестове, после доверие</b>
+                <p lang="en">If it isn't tested, it's a rumour. Coverage and CI come with the first commit, not the last.</p>
+                <p lang="bg">Ако не е тествано, е слух. Тестовете и CI идват с първия commit, не с последния.</p></div></div>
+            <div class="co" data-anchor="rotor"><i class="co__dot"></i><i class="co__line"></i>
+              <div class="co__box"><span class="co__k">II — <span lang="en">Self-winding rotor</span><span lang="bg">Самонавиващ се ротор</span></span><b lang="en">Automate the boring</b><b lang="bg">Автоматизирай скучното</b>
+                <p lang="en">Anything done twice by hand is a script waiting to be written — and a mistake waiting to happen.</p>
+                <p lang="bg">Всичко, правено два пъти на ръка, е скрипт, който чака да бъде написан — и грешка, която чака да се случи.</p></div></div>
+            <div class="co" data-anchor="caseback"><i class="co__dot"></i><i class="co__line"></i>
+              <div class="co__box"><span class="co__k">III — <span lang="en">Engraved case back</span><span lang="bg">Гравиран капак</span></span><b lang="en">Write it down</b><b lang="bg">Записвай всичко</b>
+                <p lang="en">Specs, decisions and rejected ideas live in the repo. Future me — and you — will thank me.</p>
+                <p lang="bg">Спецификации, решения и отхвърлени идеи живеят в репото. Бъдещият аз — и ти — ще ми благодарите.</p></div></div>
+            <div class="co" data-anchor="hands"><i class="co__dot"></i><i class="co__line"></i>
+              <div class="co__box"><span class="co__k">IV — <span lang="en">Hands</span><span lang="bg">Стрелки</span></span><b lang="en">Ship, then polish</b><b lang="bg">Пусни, после изпипай</b>
+                <p lang="en">A working product in your hands beats a perfect one in my head. Then we iterate.</p>
+                <p lang="bg">Работещ продукт в ръцете ти е по-добър от перфектен в главата ми. После подобряваме.</p></div></div>
+          </div>
+          <p class="watch__meta" aria-hidden="true"><span>Calibre 19</span><span>Automatic</span><span>28,800 A/H</span><span id="watchTime">--:--:--</span></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRINCIPLES: shown instead of the watch when 3D is unavailable or motion is reduced -->
+    <section class="principles principles--fallback">
       <div class="wrap">
         <div class="head">
           <p class="label"><span class="label__num">(07)</span> <span lang="en">Principles</span><span lang="bg">Принципи</span></p>
@@ -803,13 +837,13 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
-  <script src="script.js?v=20261124b"></script>
+  <script src="script.js?v=20261124c"></script>
   <script type="importmap">
     { "imports": {
       "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js",
       "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
     } }
   </script>
-  <script type="module" src="macbook3d.js?v=20261124b"></script>
+  <script type="module" src="macbook3d.js?v=20261124c"></script>
 </body>
 </html>
