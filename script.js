@@ -120,6 +120,7 @@
     var glow = sec.querySelector(".seq__glow");
     var grid = sec.querySelector(".seq__grid");
     var fade = sec.querySelector(".seq__fade");
+    var sticky = sec.querySelector(".seq__sticky");
     var eyebrow = sec.querySelector(".seq__eyebrow");
     var corners = sec.querySelectorAll(".seq__corner");
     var caps = Array.prototype.map.call(sec.querySelectorAll(".seq__cap"), function (el) {
@@ -304,7 +305,10 @@
         cp.el.style.transform = "translateY(" + ((local < .5 ? 1 : -1) * (1 - o) * 36) + "px)";
       }
 
-      fade.style.opacity = seg(p, .9, 1);
+      // dissolve into the starfield that is already pinned underneath (no black gap)
+      var out = ease(seg(p, .88, 1));
+      sticky.style.opacity = (1 - out).toFixed(3);
+      sticky.style.visibility = out >= 1 ? "hidden" : "";
     }
 
     function renderCss(open, rise, push, zoom, deep) {
@@ -503,8 +507,12 @@
 
     var top = 0, len = 1, p = 0, last = -1, lastCam = 0, spd = 0, cam = -200;
     function measure() {
-      top = track.getBoundingClientRect().top + window.scrollY;
-      len = Math.max(1, track.offsetHeight - window.innerHeight);
+      var trackTop = track.getBoundingClientRect().top + window.scrollY;
+      // the flight starts once the intro above has fully dissolved
+      var seqEl = document.getElementById("seq"), seqEnd = 0;
+      if (seqEl && !seqEl.classList.contains("seq--static")) seqEnd = seqEl.getBoundingClientRect().top + window.scrollY + seqEl.offsetHeight - window.innerHeight;
+      top = Math.max(trackTop, seqEnd);
+      len = Math.max(1, trackTop + track.offsetHeight - window.innerHeight - top);
       narrow = window.innerWidth <= 860;
       stars.width = Math.round(stars.clientWidth * dpr);
       stars.height = Math.round(stars.clientHeight * dpr);
