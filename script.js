@@ -756,124 +756,6 @@
     return { measure: measure, update: update };
   })();
 
-  // ---------- Precision: a gold automatic watch comes apart, part by part ----------
-  var watch = (function () {
-    var track = document.getElementById("watchTrack");
-    if (!track) return null;
-    if (reduceMotion) { document.documentElement.classList.add("no-watch"); return null; }
-    var host = document.getElementById("watch3d");
-    var head = track.querySelector(".watch__head");
-    var timeEl = document.getElementById("watchTime");
-    var cos = Array.prototype.map.call(track.querySelectorAll(".co"), function (el) {
-      return { el: el, anchor: el.dataset.anchor, dot: el.querySelector(".co__dot"), box: el.querySelector(".co__box") };
-    });
-    var NS = "http://www.w3.org/2000/svg";
-    var svg = document.createElementNS(NS, "svg");
-    svg.setAttribute("class", "co__svg");
-    track.querySelector(".callouts").prepend(svg);
-    cos.forEach(function (c) {
-      c.path = document.createElementNS(NS, "path");
-      c.path.setAttribute("pathLength", "1");
-      svg.appendChild(c.path);
-    });
-    var w3 = null, top = 0, len = 1, p = 0, failed = false, lastClock = "";
-
-    function fail() {
-      if (failed) return;
-      failed = true;
-      document.documentElement.classList.add("no-watch");
-      setTimeout(function () { window.dispatchEvent(new Event("resize")); }, 0);
-    }
-    on3D(function () {
-      if (!window.MacBook3D.createWatch) return fail();
-      try {
-        w3 = window.MacBook3D.createWatch(host, { onNeedsRender: function () {} });
-        measure();
-      } catch (e) { w3 = null; fail(); }
-    });
-
-    function measure() {
-      top = track.getBoundingClientRect().top + window.scrollY;
-      len = Math.max(1, track.offsetHeight - window.innerHeight);
-      if (w3) w3.resize();
-    }
-
-    // callouts: two columns on wide screens, one caption at a time on phones
-    function layoutCallouts(q, ex) {
-      var W = host.clientWidth, H = host.clientHeight, narrow = W < 860;
-      var boxW = narrow ? 168 : 270, boxH = narrow ? 58 : 128, gap = narrow ? 8 : 18, margin = narrow ? 12 : W * 0.045;
-      var current = -1;
-      cos.forEach(function (c, i) { if (ex > .97 && q > .5 + i * .06 && q < .86) current = i; });
-      var cols = [[], []];
-      cos.forEach(function (c, i) {
-        var show = narrow ? i === current : ex > .97 && q > .5 + i * .06 && q < .86;
-        c.el.classList.toggle("is-on", show);
-        c.path.classList.toggle("is-on", show);
-        c.pt = w3.project(c.anchor);
-        if (narrow) {
-          var bh = c.box.offsetHeight || 110;
-          c.box.style.left = "12px";
-          c.box.style.top = (H - bh - 48) + "px";
-          c.box.style.width = (W - 24) + "px";
-          c.dot.style.left = c.pt.x + "px";
-          c.dot.style.top = c.pt.y + "px";
-          c.path.setAttribute("d", "M" + c.pt.x.toFixed(1) + " " + c.pt.y.toFixed(1) + " L" + c.pt.x.toFixed(1) + " " + (H - bh - 48).toFixed(1));
-          return;
-        }
-        c.box.style.width = "";
-        cols[c.pt.x < W / 2 ? 0 : 1].push(c);
-      });
-      cols.forEach(function (col, side) {
-        col.sort(function (a, b) { return a.pt.y - b.pt.y; });
-        var total = col.length * boxH + Math.max(0, col.length - 1) * gap;
-        var y0 = clamp(H * 0.56 - total / 2, H * 0.22, H - total - 90);
-        col.forEach(function (c, k) {
-          var bx = side ? W - margin - boxW : margin, by = y0 + k * (boxH + gap);
-          c.el.classList.toggle("co--left", !side);
-          c.box.style.left = bx + "px";
-          c.box.style.top = by + "px";
-          c.dot.style.left = c.pt.x + "px";
-          c.dot.style.top = c.pt.y + "px";
-          var x2 = side ? bx : bx + boxW, y2 = by + 30, xm = x2 + (side ? -28 : 28);
-          c.path.setAttribute("d", "M" + c.pt.x.toFixed(1) + " " + c.pt.y.toFixed(1) + " L" + xm.toFixed(1) + " " + y2.toFixed(1) + " L" + x2.toFixed(1) + " " + y2.toFixed(1));
-        });
-      });
-    }
-
-    function render(q, time) {
-      var narrow = window.innerWidth <= 860;
-      var ex = ease(seg(q, .1, .5)) * (1 - ease(seg(q, .88, 1)));
-      var turn = ease(seg(q, .04, .5));
-      // camera: face-on beside the headline → round to the side as it opens → back to the dial
-      var back = ease(seg(q, .88, 1));        // the last stretch returns to the opening pose
-      var az = lerp(lerp(-0.42, 0.8, turn) + 0.16 * seg(q, .5, .88), -0.42, back);
-      var el = lerp(lerp(0.1, 0.4, turn), 0.1, back);
-      var r = lerp(25, narrow ? 40 : 52, ex);
-      var dist = w3.fitDistance(r, narrow ? 0.9 : 0.84);
-      var lookX = narrow ? 0 : lerp(lerp(-17, 0, turn) + 9 * ex, -17, back);     // exploded: slide left to leave room for the callouts
-      var lookY = narrow ? lerp(lerp(15, 0, turn), 15, back) : lerp(lerp(-2, 0, turn), -2, back);   // phones: the watch sits under the headline
-      w3.setExplode(ex);
-      w3.render({ az: az, el: el, dist: dist, look: { x: lookX, y: lookY, z: lerp(0, -6, ex) }, time: time, rotor: q * 9 });
-      head.style.opacity = 1 - seg(q, .08, .18) + seg(q, .92, 1);
-      layoutCallouts(q, ex);
-    }
-
-    function update(time) {
-      if (!w3) return;
-      var r = track.getBoundingClientRect();
-      if (r.bottom < 0 || r.top > window.innerHeight) return;
-      var target = clamp((window.scrollY - top) / len, 0, 1);
-      p = p + (target - p) * (lenis ? 0.18 : 0.12);
-      if (Math.abs(target - p) < 0.0003) p = target;
-      // the movement keeps running, so this one renders every frame while on screen
-      render(p, (time || performance.now()) / 1000);
-      var now = new Date(), clock = [now.getHours(), now.getMinutes(), now.getSeconds()].map(function (n) { return String(n).padStart(2, "0"); }).join(":");
-      if (clock !== lastClock) { lastClock = clock; timeEl.textContent = clock; }
-    }
-
-    return { measure: measure, update: update };
-  })();
-
   // ---------- Hide 3D scenes that are far from the screen (phones run out of GPU memory otherwise) ----------
   if ("IntersectionObserver" in window) {
     var farObserver = new IntersectionObserver(function (entries) {
@@ -881,7 +763,7 @@
         e.target.querySelectorAll(".mb3d").forEach(function (h) { h.classList.toggle("is-far", !e.isIntersecting); });
       });
     }, { rootMargin: "60% 0px 60% 0px" });
-    ["seq", "insideTrack", "sitesTrack", "watchTrack"].forEach(function (id) {
+    ["seq", "insideTrack", "sitesTrack"].forEach(function (id) {
       var el = document.getElementById(id);
       if (el) farObserver.observe(el);
     });
@@ -1271,7 +1153,6 @@
       if (stVis) statement.style.setProperty("--sp", clamp((vh - str.top) / (str.height + vh), 0, 1).toFixed(4));
     }
     if (inside) inside.update();
-    if (watch) watch.update(time);
     if (tunnel) tunnel.update(time);
 
     // manifesto words
@@ -1324,7 +1205,6 @@
     placeCases();
     if (sites) sites.measure();
     if (inside) inside.measure();
-    if (watch) watch.measure();
     if (tunnel) tunnel.measure();
     if (!seq) return;
     seq.measure();
