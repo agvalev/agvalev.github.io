@@ -469,6 +469,7 @@
   .tpanel { margin-top: -140px; }
   .tunnel__hud { left: 20px; right: 20px; bottom: 22px; gap: 12px; }
   .tunnel__bar { width: 70px; }
+  .tunnel__file { display: none; }
   .tword { font-size: 16vw; }
 }
 
