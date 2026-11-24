@@ -5,6 +5,9 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { CSS3DRenderer, CSS3DObject } from "three/addons/renderers/CSS3DRenderer.js";
+import { RectAreaLightUniformsLib } from "three/addons/lights/RectAreaLightUniformsLib.js";
+
+RectAreaLightUniformsLib.init();
 
 // Studio HDRI (Poly Haven, CC0) for realistic reflections on the aluminium.
 const HDRI = "https://cdn.jsdelivr.net/gh/pmndrs/drei-assets@456060a26bbeb8fdf79326f224b6d99b8bcce736/hdri/studio_small_03_1k.hdr";
@@ -56,7 +59,7 @@ function plate(w, h, r, mat, rTop) {
 function slab(w, h, depth, r, fillet) {
   const g = new THREE.ExtrudeGeometry(roundedRect(w - 2 * fillet, h - 2 * fillet, r - fillet), {
     depth: depth - 2 * fillet, bevelEnabled: true, bevelThickness: fillet, bevelSize: fillet,
-    bevelSegments: 6, curveSegments: 28
+    bevelSegments: 10, curveSegments: 32
   });
   g.translate(0, 0, fillet);
   return g;
@@ -106,14 +109,27 @@ export function createMacbook(host, screenEl, opts = {}) {
 
   // ----- materials
   // The studio HDRI is bright, so reflections are scaled per material to land on real-world values.
+  // bead-blasted grain: fine noise in the roughness, so reflections break up like real anodised metal
+  const grain = canvasTexture(512, 512, (g, w, h) => {
+    const img = g.createImageData(w, h);
+    let seed = 7;
+    for (let i = 0; i < w * h; i++) {
+      seed = (seed * 16807) % 2147483647;
+      const v = 150 + ((seed / 2147483647) - 0.5) * 70;   // around 0.59 roughness, ±0.14
+      img.data[i * 4] = img.data[i * 4 + 1] = img.data[i * 4 + 2] = v; img.data[i * 4 + 3] = 255;
+    }
+    g.putImageData(img, 0, 0);
+  }, { linear: true });
+  grain.wrapS = grain.wrapT = THREE.RepeatWrapping;
+  grain.repeat.set(0.45, 0.45);       // geometry UVs are in centimetres
   const alu = new THREE.MeshStandardMaterial({   // space grey, bead-blasted anodised aluminium
-    color: 0x505156, metalness: 1, roughness: 0.5, envMapIntensity: 0.2
+    color: 0x46474c, metalness: 1, roughness: 0.62, roughnessMap: grain, envMapIntensity: 0.22
   });
   const aluEdge = alu.clone();
-  const wellMat = new THREE.MeshStandardMaterial({ color: 0x030304, roughness: 0.98, metalness: 0, envMapIntensity: 0.04 });
-  const keyMat = new THREE.MeshStandardMaterial({ color: 0x080809, roughness: 0.88, metalness: 0, envMapIntensity: 0.05 });
+  const wellMat = new THREE.MeshStandardMaterial({ color: 0x050506, roughness: 0.9, metalness: 0, envMapIntensity: 0.06 });
+  const keyMat = new THREE.MeshStandardMaterial({ color: 0x070708, roughness: 0.82, metalness: 0, envMapIntensity: 0.035 });
   const glass = new THREE.MeshPhysicalMaterial({ color: 0x020203, roughness: 0.05, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 0.55 });
-  const padMat = new THREE.MeshStandardMaterial({ color: 0x46474c, metalness: 0.85, roughness: 0.32, envMapIntensity: 0.18 });
+  const padMat = new THREE.MeshStandardMaterial({ color: 0x3f4045, metalness: 0.95, roughness: 0.34, envMapIntensity: 0.2 });
   const portMat = new THREE.MeshStandardMaterial({ color: 0x030303, roughness: 0.8 });
   const hingeMat = new THREE.MeshPhysicalMaterial({ color: 0x0e0e10, metalness: 0.5, roughness: 0.45 });
 
@@ -135,7 +151,7 @@ export function createMacbook(host, screenEl, opts = {}) {
   const wellZ = -D / 2 + 1.15 + wellD / 2;
   const well = plate(wellW, wellD, 0.45, wellMat);
   well.rotation.x = -Math.PI / 2;
-  well.position.set(0, BH + 0.002, wellZ);
+  well.position.set(0, BH + 0.006, wellZ);
   deck.add(well);
 
   const keyTop = BH + 0.13;
@@ -218,16 +234,28 @@ export function createMacbook(host, screenEl, opts = {}) {
   [-1, 1].forEach((s) => {
     const p = new THREE.Mesh(new THREE.PlaneGeometry(1.25, wellD - 0.2), grilleMat);
     p.rotation.x = -Math.PI / 2;
-    p.position.set(s * (wellW / 2 + (W / 2 - wellW / 2) / 2), BH + 0.002, wellZ);
+    p.position.set(s * (wellW / 2 + (W / 2 - wellW / 2) / 2), BH + 0.006, wellZ);
     deck.add(p);
   });
 
   // glass trackpad
   const padD = 8.0, padZ = wellZ + wellD / 2 + 1.05 + padD / 2;
+  const padGap = plate(13.8 + 0.1, padD + 0.1, 0.5, new THREE.MeshStandardMaterial({ color: 0x1b1b1e, roughness: 0.7, metalness: 0.3 }));
+  padGap.rotation.x = -Math.PI / 2;
+  padGap.position.set(0, BH + 0.006, wellZ + wellD / 2 + 1.05 + padD / 2);
+  deck.add(padGap);
   const pad = plate(13.8, padD, 0.45, padMat);
   pad.rotation.x = -Math.PI / 2;
-  pad.position.set(0, BH + 0.002, padZ);
+  pad.position.set(0, BH + 0.014, padZ);
   deck.add(pad);
+
+  // flush layers on the deck: bias their depth so they never flicker against the aluminium at a distance
+  [well, padGap, pad].forEach((m, i) => {
+    m.material.polygonOffset = true;
+    m.material.polygonOffsetFactor = -1;
+    m.material.polygonOffsetUnits = -4 - 4 * i;
+  });
+  grilleMat.polygonOffset = true; grilleMat.polygonOffsetFactor = -1; grilleMat.polygonOffsetUnits = -6;
 
   // thumb scoop on the front edge
   const scoop = canvasTexture(256, 64, (g, w, h) => {
@@ -238,7 +266,7 @@ export function createMacbook(host, screenEl, opts = {}) {
   const scoopMesh = new THREE.Mesh(new THREE.PlaneGeometry(7, 0.5),
     new THREE.MeshBasicMaterial({ map: scoop, transparent: true, depthWrite: false }));
   scoopMesh.rotation.x = -Math.PI / 2;
-  scoopMesh.position.set(0, BH + 0.003, D / 2 - 0.4);
+  scoopMesh.position.set(0, BH + 0.006, D / 2 - 0.4);
   deck.add(scoopMesh);
 
   // ports on the sides: MagSafe, Thunderbolt ×2, headphone (left) · HDMI, Thunderbolt, SD (right)
@@ -522,15 +550,24 @@ export function createMacbook(host, screenEl, opts = {}) {
   }
 
   // ----- lights on top of the HDRI: gold rim from behind, gentle key from the front
-  const rim = new THREE.DirectionalLight(0xe8c88f, 2.2);
+  const rim = new THREE.DirectionalLight(0xf0dcbc, 2.0);
   rim.position.set(-30, 26, -44);
   scene.add(rim);
   const rim2 = new THREE.DirectionalLight(0xbcd4ff, 0.9);
   rim2.position.set(36, 18, -30);
   scene.add(rim2);
-  const keyLight = new THREE.DirectionalLight(0xffffff, 0.35);
+  const keyLight = new THREE.DirectionalLight(0xffffff, 0.25);
   keyLight.position.set(10, 40, 40);
   scene.add(keyLight);
+  // product-photo softboxes: a long one overhead-behind draws a smooth gradient across the metal
+  const softTop = new THREE.RectAreaLight(0xfff4e6, 0.7, 60, 16);
+  softTop.position.set(0, 34, -18);
+  softTop.lookAt(0, 0, 2);
+  scene.add(softTop);
+  const softSide = new THREE.RectAreaLight(0xdfe8ff, 0.35, 14, 30);
+  softSide.position.set(-38, 14, 16);
+  softSide.lookAt(0, 4, 0);
+  scene.add(softSide);
 
   // ----- DOM screen glued to the lid
   const anchor = new THREE.Object3D();
@@ -579,6 +616,7 @@ export function createMacbook(host, screenEl, opts = {}) {
     camera.position.set(state.pos.x, state.pos.y, state.pos.z);
     target.set(state.look.x, state.look.y, state.look.z);
     camera.lookAt(target);
+    beamFollow();
     root.updateMatrixWorld(true);
     cssObj.matrix.copy(anchor.matrixWorld).multiply(scaleM);
     cssObj.matrixWorldNeedsUpdate = true;
@@ -590,6 +628,7 @@ export function createMacbook(host, screenEl, opts = {}) {
   // ----- materialising intro (Igloo-style): the laptop is first only glowing edges, then a scan
   // line sweeps across it and leaves the real aluminium behind. t: 0 wireframe … 1 solid
   let setMaterialize = () => {};
+  let beamFollow = () => {};
   if (opts.materialize) {
     renderer.localClippingEnabled = true;
     const solidPlane = new THREE.Plane(new THREE.Vector3(-1, 0, 0), 0);
@@ -610,34 +649,37 @@ export function createMacbook(host, screenEl, opts = {}) {
       edges.push(e);
     });
     mats.forEach((mt) => { mt.clippingPlanes = [solidPlane]; mt.needsUpdate = true; });
-    // the bright scan sheet that does the "printing"
-    const scanMat = new THREE.MeshBasicMaterial({
-      color: 0xffe2a8, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending,
-      depthWrite: false, side: THREE.DoubleSide, toneMapped: false
+    // a soft column of light that faces the camera: gaussian across, fading at the top and bottom
+    const beamTex = (sigma, core) => canvasTexture(128, 512, (g, w, h) => {
+      const img = g.createImageData(w, h);
+      for (let y = 0; y < h; y++) {
+        const vy = Math.pow(Math.sin(Math.PI * y / (h - 1)), 1.6);
+        for (let x = 0; x < w; x++) {
+          const u = (x - (w - 1) / 2) / (w / 2);
+          const a = (Math.exp(-(u * u) / (2 * sigma * sigma)) + core * Math.exp(-(u * u) / 0.0016)) * vy;
+          const i = (y * w + x) * 4;
+          img.data[i] = 255; img.data[i + 1] = 226; img.data[i + 2] = 178; img.data[i + 3] = Math.min(255, a * 255);
+        }
+      }
+      g.putImageData(img, 0, 0);
     });
-    const scan = new THREE.Mesh(new THREE.PlaneGeometry(D + 3, 2.2), scanMat);
-    scan.rotation.y = Math.PI / 2;
-    scan.position.y = 1.1;
-    scene.add(scan);
-    const glow = new THREE.Mesh(new THREE.PlaneGeometry(D + 6, 7), new THREE.MeshBasicMaterial({
-      map: canvasTexture(64, 256, (g, w, h) => {
-        const gr = g.createLinearGradient(0, 0, 0, h);
-        gr.addColorStop(0, "rgba(255,210,140,0)"); gr.addColorStop(0.5, "rgba(255,210,140,1)"); gr.addColorStop(1, "rgba(255,210,140,0)");
-        g.fillStyle = gr; g.fillRect(0, 0, w, h);
-      }), transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false
-    }));
-    glow.rotation.y = Math.PI / 2;
-    glow.position.y = 1.1;
-    scene.add(glow);
+    const beamMat = (tex) => new THREE.MeshBasicMaterial({ map: tex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, toneMapped: false, opacity: 0 });
+    const beam = new THREE.Mesh(new THREE.PlaneGeometry(7, 34), beamMat(beamTex(0.22, 0.35)));
+    const halo = new THREE.Mesh(new THREE.PlaneGeometry(30, 40), beamMat(beamTex(0.3, 0)));
+    [beam, halo].forEach((b) => { b.renderOrder = 5; scene.add(b); });
+    beamFollow = () => { beam.quaternion.copy(camera.quaternion); halo.quaternion.copy(camera.quaternion); };
+    const ss = THREE.MathUtils.smoothstep;
     setMaterialize = (t) => {
-      const x = THREE.MathUtils.lerp(-W / 2 - 1.2, W / 2 + 1.2, t);
+      // the light travels a little past both edges, so it fades in before and out after the laptop
+      const x = THREE.MathUtils.lerp(-W / 2 - 7, W / 2 + 7, ss(t, 0, 0.88));
       solidPlane.constant = t >= 1 ? 1e4 : x;     // keep x <= sweep
       edgePlane.constant = -x;                     // keep x >= sweep
-      edgeMat.opacity = 0.55 * (1 - THREE.MathUtils.smoothstep(t, 0.85, 1));
-      const on = t > 0.001 && t < 0.999;
-      scan.visible = glow.visible = on;
-      scan.position.x = glow.position.x = x;
-      scanMat.opacity = 0.85 * Math.sin(Math.PI * Math.min(1, t * 1.15));
+      edgeMat.opacity = 0.4 * (1 - ss(t, 0.5, 0.92));
+      const fade = ss(t, 0, 0.18) * (1 - ss(t, 0.62, 1));
+      beam.material.opacity = 0.75 * fade;
+      halo.material.opacity = 0.28 * fade;
+      beam.visible = halo.visible = t > 0.0005 && t < 0.9995;
+      beam.position.set(x, 8, 0); halo.position.set(x, 8, 0);
       edges.forEach((e) => { e.visible = t < 1; });
     };
     setMaterialize(0);

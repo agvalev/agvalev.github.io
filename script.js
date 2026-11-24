@@ -227,9 +227,9 @@
           (root.classList.contains("is-loading") && !(loader && loader.classList.contains("is-done")));
         if (waiting) return requestAnimationFrame(step);
         if (!t0) t0 = now + 250;
-        var k = clamp((now - t0) / 2400, 0, 1);
+        var k = clamp((now - t0) / 3800, 0, 1);
         if (window.__matHold != null) k = window.__matHold;   // review hook: freeze the sweep
-        hero3d.setMaterialize(ease(k));
+        hero3d.setMaterialize(k);   // the module eases the travel and the fades itself
         if (seq) seq.last = null;
         if (k < 1) requestAnimationFrame(step);
       })(performance.now());
