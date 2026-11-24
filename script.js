@@ -457,7 +457,7 @@
     function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
     for (var i = 0; i < 900; i++) pts.push({ x: (rnd() - .5) * 3200, y: (rnd() - .5) * 2000, z: -rnd() * (depth + 2000), g: rnd() });
 
-    var top = 0, len = 1, p = 0, last = -1, lastCam = 0;
+    var top = 0, len = 1, p = 0, last = -1, lastCam = 0, spd = 0;
     function measure() {
       top = track.getBoundingClientRect().top + window.scrollY;
       len = Math.max(1, track.offsetHeight - window.innerHeight);
@@ -475,7 +475,7 @@
       var active = 0;
       items.forEach(function (it, i) {
         var eff = it.z + cam;                     // distance in front of the camera (negative = ahead)
-        var o = Math.min(clamp((eff + 5200) / 2600, 0, 1), clamp(1 - (eff - 250) / 420, 0, 1));
+        var o = Math.min(clamp((eff + 5600) / 3000, 0, 1), clamp(1 - (eff + 150) / 850, 0, 1));
         it.el.style.opacity = o.toFixed(3);
         it.el.style.visibility = o > 0.002 ? "visible" : "hidden";
         var x = it.side * vw * spread, y = (i % 3 - 1) * vh * (narrow ? .06 : .1);
@@ -484,7 +484,7 @@
       });
       words.forEach(function (w) {
         var eff = w.z + cam;
-        var o = Math.min(clamp((eff + 4200) / 2000, 0, 1), clamp(1 - (eff - 100) / 500, 0, 1));
+        var o = Math.min(clamp((eff + 4600) / 2400, 0, 1), clamp(1 - (eff + 200) / 900, 0, 1));
         w.el.style.opacity = o.toFixed(3);
         w.el.style.transform = "translate3d(" + (w.side * vw * (narrow ? .05 : .2) - (narrow ? vw * .4 : vw * .25)).toFixed(1) + "px," + (-vh * .08).toFixed(1) + "px," + w.z + "px)";
       });
@@ -497,7 +497,9 @@
       fade.style.opacity = seg(q, .93, 1);
 
       // stars: dots that stretch into streaks with speed
-      var speed = clamp(Math.abs(cam - lastCam), 0, 260);
+      spd += (clamp(Math.abs(cam - lastCam), 0, 70) - spd) * 0.05;
+      if (spd < 0.05) spd = 0;
+      var speed = spd;
       lastCam = cam;
       var W = stars.width, H = stars.height, cx = W / 2, cy = H / 2;
       ctx.clearRect(0, 0, W, H);
@@ -506,7 +508,7 @@
         var er = zr + cam;
         if (er > P - 80) continue;
         var fr = P / (P - er);
-        var ar = clamp(1 - (-er) / 6500, 0, 1) * clamp((P - 80 - er) / 500, 0, 1) * 0.32;
+        var ar = clamp(1 - (-er) / 6500, 0, 1) * clamp((P - 80 - er) / 1000, 0, 1) * 0.26;
         if (ar <= 0.004) continue;
         var hw = vw * (narrow ? .62 : .58) * fr * dpr, hh = vh * .6 * fr * dpr, rr = 40 * fr * dpr;
         ctx.strokeStyle = "rgba(216,183,122," + ar.toFixed(3) + ")";
@@ -520,13 +522,14 @@
       }
       for (var k = 0; k < pts.length; k++) {
         var s = pts[k], z = s.z + cam;
-        if (z > P - 40) continue;
-        var f = P / (P - z), f2 = P / (P - z + speed * 2.2);
+        if (z > P - 60) continue;
+        var f = P / (P - z), f2 = P / (P - z + speed * 1.3);
         var px = cx + s.x * f * dpr, py = cy + s.y * f * dpr;
         if (px < -50 || px > W + 50 || py < -50 || py > H + 50) continue;
-        var a = clamp(1 - (-z) / 5000, 0, 1) * (0.35 + s.g * 0.65);
+        // fade in from the distance and out again well before a star reaches the camera
+        var a = clamp(1 - (-z) / 5000, 0, 1) * clamp((P - 60 - z) / 700, 0, 1) * (0.25 + s.g * 0.5);
         ctx.strokeStyle = s.g > .82 ? "rgba(243,223,180," + a.toFixed(3) + ")" : "rgba(220,220,230," + (a * .6).toFixed(3) + ")";
-        ctx.lineWidth = (0.6 + f * 1.4) * dpr;
+        ctx.lineWidth = Math.min(2, 0.5 + f * 0.8) * dpr;
         ctx.beginPath();
         ctx.moveTo(px, py);
         ctx.lineTo(cx + s.x * f2 * dpr + 0.01, cy + s.y * f2 * dpr);
@@ -538,9 +541,9 @@
       var r = track.getBoundingClientRect();
       if (r.bottom < 0 || r.top > window.innerHeight) return;
       var target = clamp((window.scrollY - top) / len, 0, 1);
-      p = reduceMotion ? target : p + (target - p) * (lenis ? 0.2 : 0.12);
+      p = reduceMotion ? target : p + (target - p) * (lenis ? 0.07 : 0.06);
       if (Math.abs(target - p) < 0.0002) p = target;
-      if (p === last) return;
+      if (p === last && spd === 0) return;
       last = p;
       render(p);
     }
