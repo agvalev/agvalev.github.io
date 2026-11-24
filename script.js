@@ -451,14 +451,16 @@
     document.getElementById("tunnelTotal").textContent = String(items.length).padStart(2, "0");
     var depth = START + (items.length - 1) * GAP + 1200;
 
-    // ----- deep space behind the code: twinkling far stars, nebulae, planets, near stars with streaks
+    // ----- deep space behind the code: twinkling far stars, nebulae and near stars with streaks
     var ctx = stars.getContext("2d"), dpr = Math.min(window.devicePixelRatio || 1, 2);
     var seed = 9;
     function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
-    var STAR_TINTS = ["255,255,255", "243,223,180", "190,215,255", "255,214,190"];
+    // star colours as a camera sees them: mostly white, a few faintly warm or cool
+    var STAR_TINTS = ["255,255,255", "255,255,255", "255,255,255", "255,244,228", "222,232,255"];
     var pts = [];
-    for (var i = 0; i < (narrow ? 700 : 1400); i++) {
-      pts.push({ x: (rnd() - .5) * 3400, y: (rnd() - .5) * 2200, z: -rnd() * (depth + 2400), g: rnd(), t: STAR_TINTS[Math.floor(rnd() * 4)] });
+    for (var i = 0; i < (narrow ? 450 : 900); i++) {
+      // brightness follows a steep curve: most stars are faint, very few are bright
+      pts.push({ x: (rnd() - .5) * 3400, y: (rnd() - .5) * 2200, z: -rnd() * (depth + 2400), g: Math.pow(rnd(), 2.2), t: STAR_TINTS[Math.floor(rnd() * 5)] });
     }
 
     function layer(w, h, draw) {
@@ -472,14 +474,14 @@
       seed = s0;
       return layer(w, h, function (g) {
         for (var k = 0; k < n; k++) {
-          var x = rnd() * w, y = rnd() * h, b = rnd(), r = (b > .985 ? 1.6 : b > .9 ? 1.05 : 0.6) * dpr;
-          var tint = STAR_TINTS[Math.floor(rnd() * 4)];
-          if (b > .985) {      // a few bright ones with a soft halo
-            var gr = g.createRadialGradient(x, y, 0, x, y, r * 6);
-            gr.addColorStop(0, "rgba(" + tint + ",.55)"); gr.addColorStop(1, "rgba(" + tint + ",0)");
-            g.fillStyle = gr; g.fillRect(x - r * 6, y - r * 6, r * 12, r * 12);
+          var x = rnd() * w, y = rnd() * h, b = Math.pow(rnd(), 3), r = (0.32 + b * 0.7) * dpr;
+          var tint = STAR_TINTS[Math.floor(rnd() * 5)];
+          if (b > .7) {        // only the brightest get a faint, tight glow
+            var gr = g.createRadialGradient(x, y, 0, x, y, r * 3);
+            gr.addColorStop(0, "rgba(" + tint + "," + (0.22 * b).toFixed(3) + ")"); gr.addColorStop(1, "rgba(" + tint + ",0)");
+            g.fillStyle = gr; g.fillRect(x - r * 3, y - r * 3, r * 6, r * 6);
           }
-          g.fillStyle = "rgba(" + tint + "," + (0.25 + b * 0.6).toFixed(2) + ")";
+          g.fillStyle = "rgba(" + tint + "," + (0.12 + b * 0.8).toFixed(2) + ")";
           g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
         }
       });
@@ -497,125 +499,6 @@
         });
       });
     }
-    // planets rendered per pixel as lit spheres: 3D value noise for the surface, one sun,
-    // a soft terminator and an atmosphere that scatters light around the rim
-    var PERM = new Uint8Array(512);
-    (function () { var a = []; for (var k = 0; k < 256; k++) a.push(k); seed = 77; for (k = 255; k > 0; k--) { var j = Math.floor(rnd() * (k + 1)); var t = a[k]; a[k] = a[j]; a[j] = t; } for (k = 0; k < 512; k++) PERM[k] = a[k & 255]; })();
-    function vnoise(x, y, z) {
-      var X = Math.floor(x), Y = Math.floor(y), Z = Math.floor(z);
-      x -= X; y -= Y; z -= Z; X &= 255; Y &= 255; Z &= 255;
-      var u = x * x * (3 - 2 * x), v = y * y * (3 - 2 * y), w = z * z * (3 - 2 * z);
-      function h(i, j, k) { return PERM[PERM[PERM[X + i] + Y + j] + Z + k] / 255; }
-      var a = h(0, 0, 0) + (h(1, 0, 0) - h(0, 0, 0)) * u, b = h(0, 1, 0) + (h(1, 1, 0) - h(0, 1, 0)) * u;
-      var c = h(0, 0, 1) + (h(1, 0, 1) - h(0, 0, 1)) * u, d = h(0, 1, 1) + (h(1, 1, 1) - h(0, 1, 1)) * u;
-      var e = a + (b - a) * v, f = c + (d - c) * v;
-      return e + (f - e) * w;
-    }
-    function fbm(x, y, z, oct) { var s = 0, a = .5, f = 1; for (var o = 0; o < oct; o++) { s += a * vnoise(x * f, y * f, z * f); f *= 2.03; a *= .5; } return s; }
-    function mix(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
-    var SUN = (function () { var l = [-0.62, 0.5, 0.6], m = Math.hypot(l[0], l[1], l[2]); return [l[0] / m, l[1] / m, l[2] / m]; })();
-
-    // surface(n) → [r,g,b] in 0..1 for a unit normal in the planet's own frame
-    var SURF = {
-      moon: function (x, y, z) {
-        var n = fbm(x * 3 + 7, y * 3, z * 3, 5), cr = fbm(x * 9, y * 9 + 3, z * 9, 2);
-        var c = mix([.32, .31, .3], [.78, .76, .72], n);
-        if (cr > .62) c = mix(c, [.18, .17, .17], Math.min(1, (cr - .62) * 4));
-        return c;
-      },
-      giant: function (x, y, z) {
-        var lat = y + (fbm(x * 2.5, y * 2.5, z * 2.5, 4) - .5) * .35;
-        var b = .5 + .5 * Math.sin(lat * 15 + Math.sin(lat * 5) * 2);
-        var c = mix([.42, .27, .15], [.96, .86, .66], b);
-        return mix(c, [.85, .62, .38], fbm(x * 6, y * 20, z * 6, 3) * .35);
-      },
-      ocean: function (x, y, z) {
-        var land = fbm(x * 2.2 + 11, y * 2.2, z * 2.2, 5), cloud = fbm(x * 3.5, y * 5 + 4, z * 3.5, 4);
-        var c = land > .55 ? mix([.16, .3, .14], [.55, .46, .3], Math.min(1, (land - .55) * 5)) : mix([.02, .1, .22], [.05, .3, .46], land / .55);
-        if (Math.abs(y) > .86) c = mix(c, [.92, .95, 1], Math.min(1, (Math.abs(y) - .86) * 8));
-        if (cloud > .52) c = mix(c, [.95, .97, 1], Math.min(.85, (cloud - .52) * 3.2));
-        return c;
-      },
-      dune: function (x, y, z) {
-        var n = fbm(x * 3, y * 3 + 2, z * 3, 5);
-        return mix([.36, .14, .08], [.92, .58, .34], n);
-      }
-    };
-
-    function planet(o) {
-      var S = o.size, c = S / 2, r = S * o.rk;
-      var tilt = o.tilt || 0, ct = Math.cos(tilt), st = Math.sin(tilt);
-      var sphere = layer(S, S, function (g) {
-        var x0 = Math.max(0, Math.floor(c - r * 1.35)), x1 = Math.min(S, Math.ceil(c + r * 1.35));
-        var img = g.createImageData(S, S), d = img.data;
-        for (var py = x0; py < x1; py++) {
-          for (var px = x0; px < x1; px++) {
-            var dx = (px + .5 - c) / r, dy = (c - py - .5) / r, d2 = dx * dx + dy * dy, i = (py * S + px) * 4;
-            if (d2 > 1.82) continue;
-            if (d2 > 1) {                                  // atmosphere halo outside the disc
-              var dd = Math.sqrt(d2), lit = Math.max(0, (dx * SUN[0] + dy * SUN[1]) / dd * .6 + .45);
-              var ha = Math.pow(Math.max(0, 1 - (dd - 1) / .35), 2.6) * lit * o.halo;
-              d[i] = o.atmo[0] * 255; d[i + 1] = o.atmo[1] * 255; d[i + 2] = o.atmo[2] * 255; d[i + 3] = ha * 255;
-              continue;
-            }
-            var nz = Math.sqrt(1 - d2);
-            var ndl = dx * SUN[0] + dy * SUN[1] + nz * SUN[2];
-            // surface lookup in the planet frame (tilted axis)
-            var sx = dx * ct - dy * st, sy = dx * st + dy * ct;
-            var col = SURF[o.surface](sx, sy, nz);
-            var diff = Math.max(0, Math.min(1, ndl * 1.15 + .04));
-            diff = diff * diff * (3 - 2 * diff);             // soft terminator
-            var fres = Math.pow(1 - nz, 2.4);
-            var atm = fres * Math.max(0, ndl + .35) * o.rim;
-            var spec = o.spec ? Math.pow(Math.max(0, 2 * ndl * nz - SUN[2]), 28) * o.spec * diff : 0;
-            d[i] = Math.min(255, (col[0] * diff + o.atmo[0] * atm + spec) * 255);
-            d[i + 1] = Math.min(255, (col[1] * diff + o.atmo[1] * atm + spec) * 255);
-            d[i + 2] = Math.min(255, (col[2] * diff + o.atmo[2] * atm + spec) * 255);
-            d[i + 3] = 255;
-          }
-        }
-        g.putImageData(img, 0, 0);
-      });
-      if (!o.ring) return sphere;
-      return layer(S, S, function (g) {
-        function ring(front) {
-          g.save();
-          g.beginPath();
-          if (front) g.rect(0, c, S, S); else g.rect(0, 0, S, c);
-          g.clip();
-          g.translate(c, c); g.rotate(-0.32); g.scale(1, 0.26);
-          for (var k = 0; k < 60; k++) {
-            var t = k / 60, rr = r * (1.32 + t * 0.95);
-            var a = (0.1 + 0.32 * Math.pow(Math.sin(t * Math.PI), .6)) * (t > .62 && t < .67 ? .15 : 1);
-            g.strokeStyle = "rgba(" + o.ringTint + "," + a.toFixed(3) + ")";
-            g.lineWidth = r * 0.018;
-            g.beginPath(); g.arc(0, 0, rr, 0, Math.PI * 2); g.stroke();
-          }
-          g.restore();
-        }
-        ring(false);
-        g.drawImage(sphere, 0, 0);
-        ring(true);
-      });
-    }
-    var PLANET_DEFS = [
-      { size: 420, rk: .34, surface: "moon", atmo: [.75, .75, .8], halo: .12, rim: .15, x: -1150, y: -430, z: -1500, R: 150 },
-      { size: 1000, rk: .2, surface: "giant", atmo: [.95, .8, .55], halo: .45, rim: .5, ring: true, ringTint: "232,206,160", tilt: -0.32, x: 1950, y: 300, z: -3400, R: 620 },
-      { size: 640, rk: .34, surface: "ocean", atmo: [.45, .75, 1], halo: .6, rim: .9, spec: .35, tilt: .3, x: -2100, y: 360, z: -5300, R: 520 },
-      // the last one is a horizon we skim over at the end of the tunnel
-      { size: 900, rk: .34, surface: "dune", atmo: [1, .72, .45], halo: .8, rim: 1.1, tilt: .1, x: 0, y: 3500, z: -(depth + 700), R: 3150, horizon: true }
-    ];
-    var planets = [];
-    // build one planet per idle slot so the page never stutters
-    (function build(k) {
-      if (k >= PLANET_DEFS.length) return;
-      var go = function () {
-        var o = PLANET_DEFS[k];
-        planets.push({ img: planet(o), x: o.x, y: o.y, z: o.z, R: o.R, scale: 1 / (2 * o.rk), horizon: !!o.horizon });
-        build(k + 1);
-      };
-      if (window.requestIdleCallback) requestIdleCallback(go, { timeout: 1500 }); else setTimeout(go, 60);
-    })(0);
     var farA = null, farB = null, neb = null;
 
     var top = 0, len = 1, p = 0, last = -1, lastCam = 0, spd = 0, cam = -200;
@@ -625,7 +508,7 @@
       narrow = window.innerWidth <= 860;
       stars.width = Math.round(stars.clientWidth * dpr);
       stars.height = Math.round(stars.clientHeight * dpr);
-      var n = narrow ? 900 : 1700;
+      var n = narrow ? 1400 : 2600;
       farA = farStars(stars.width, stars.height, n, 101);
       farB = farStars(stars.width, stars.height, n, 202);
       neb = nebula(stars.width, stars.height);
@@ -675,7 +558,7 @@
       // nebula: slow parallax zoom and drift
       ctx.save();
       var nz = 1.15 + q * 0.35;
-      ctx.globalAlpha = 0.75;
+      ctx.globalAlpha = 0.55;
       ctx.translate(cx, cy); ctx.rotate(q * 0.12 + Math.sin(time / 9000) * 0.02); ctx.scale(nz, nz);
       ctx.drawImage(neb, -W / 2, -H / 2, W, H);
       ctx.restore();
@@ -685,46 +568,11 @@
       var fz = 1 + q * 0.08;
       ctx.save();
       ctx.translate(cx, cy); ctx.scale(fz, fz);
-      ctx.globalAlpha = 0.7 + 0.3 * Math.sin(tw * 1.3);
+      ctx.globalAlpha = 0.85 + 0.15 * Math.sin(tw * 1.3);
       ctx.drawImage(farA, -W / 2, -H / 2);
-      ctx.globalAlpha = 0.7 + 0.3 * Math.cos(tw * 1.1);
+      ctx.globalAlpha = 0.85 + 0.15 * Math.cos(tw * 1.1);
       ctx.drawImage(farB, -W / 2, -H / 2);
       ctx.restore();
-      ctx.globalAlpha = 1;
-
-      // planets (far → near)
-      planets.slice().sort(function (a, b) { return a.z - b.z; }).forEach(function (pl) {
-        var e = pl.z + cam;
-        if (e > P - 120) return;
-        var f = P / (P - e);
-        var a = pl.horizon ? clamp((e + 4200) / 2400, 0, 1) : clamp((e + 7500) / 2600, 0, 1) * clamp((P - 120 - e) / 1000, 0, 1);
-        if (a <= 0.003) return;
-        var size = pl.R * 2 * pl.scale * f * dpr;   // sphere radius on screen = R · f
-        // phones are narrow: pull the planets in towards the centre so they pass on screen
-        var px = cx + pl.x * (narrow ? 0.42 : 1) * f * dpr, py = cy + pl.y * f * dpr;
-        if (px + size < 0 || px - size > W || py + size < 0 || py - size > H) return;
-        if (pl.horizon) {
-          // huge on screen: draw the limb and atmosphere as vectors so the edge stays perfectly smooth
-          var rad = pl.R * f * dpr;
-          ctx.save();
-          ctx.globalAlpha = a;
-          var glow = ctx.createRadialGradient(px, py, rad * 0.97, px, py, rad * 1.16);
-          glow.addColorStop(0, "rgba(255,186,120,.5)"); glow.addColorStop(.35, "rgba(255,170,110,.16)"); glow.addColorStop(1, "rgba(255,160,100,0)");
-          ctx.fillStyle = glow;
-          ctx.beginPath(); ctx.arc(px, py, rad * 1.16, 0, Math.PI * 2); ctx.fill();
-          ctx.beginPath(); ctx.arc(px, py, rad * 0.996, 0, Math.PI * 2); ctx.clip();
-          ctx.drawImage(pl.img, px - size / 2, py - size / 2, size, size);
-          ctx.restore();
-          ctx.save();
-          ctx.globalAlpha = a * 0.7;
-          ctx.strokeStyle = "rgba(255,222,170,.8)"; ctx.lineWidth = 1.6 * dpr;
-          ctx.beginPath(); ctx.arc(px, py, rad * 0.996, Math.PI * 1.18, Math.PI * 1.82); ctx.stroke();
-          ctx.restore();
-          return;
-        }
-        ctx.globalAlpha = a;
-        ctx.drawImage(pl.img, px - size / 2, py - size / 2, size, size);
-      });
       ctx.globalAlpha = 1;
 
       // corridor: faint rounded frames every 650px that we fly through
@@ -754,9 +602,9 @@
         var sx = cx + s.x * f1 * dpr, sy = cy + s.y * f1 * dpr;
         if (sx < -50 || sx > W + 50 || sy < -50 || sy > H + 50) continue;
         // fade in from the distance and out again well before a star reaches the camera
-        var al = clamp(1 - (-z) / 6000, 0, 1) * clamp((P - 60 - z) / 700, 0, 1) * (0.3 + s.g * 0.6);
+        var al = clamp(1 - (-z) / 6000, 0, 1) * clamp((P - 60 - z) / 700, 0, 1) * (0.15 + s.g * 0.7);
         ctx.strokeStyle = "rgba(" + s.t + "," + al.toFixed(3) + ")";
-        ctx.lineWidth = Math.min(2.4, 0.5 + f1 * (s.g > .9 ? 1.4 : 0.8)) * dpr;
+        ctx.lineWidth = Math.min(1.2, 0.35 + f1 * (0.25 + s.g * 0.35)) * dpr;
         ctx.beginPath();
         ctx.moveTo(sx, sy);
         ctx.lineTo(cx + s.x * f2 * dpr + 0.01, cy + s.y * f2 * dpr);
@@ -899,6 +747,19 @@
 
     return { measure: measure, update: update };
   })();
+
+  // ---------- Hide 3D scenes that are far from the screen (phones run out of GPU memory otherwise) ----------
+  if ("IntersectionObserver" in window) {
+    var farObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        e.target.querySelectorAll(".mb3d").forEach(function (h) { h.classList.toggle("is-far", !e.isIntersecting); });
+      });
+    }, { rootMargin: "60% 0px 60% 0px" });
+    ["seq", "insideTrack", "sitesTrack"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) farObserver.observe(el);
+    });
+  }
 
   // ---------- Split headings into words ----------
   function wrapWords(el, make) {
@@ -1098,7 +959,7 @@
           onNeedsRender: function () { if (mac3d) renderMac(); }
         });
         stageWrap.classList.add("has-mac3d");
-        if (window.MacBook3D.createIphone) {
+        if (window.MacBook3D.createIphone && window.innerWidth > 860) {
           try {
             ph3d = window.MacBook3D.createIphone(document.getElementById("sitesPhone"), phone.querySelector(".phone__screen"), {
               fov: 18,
@@ -1138,9 +999,21 @@
     function mark(list, i) {
       for (var k = 0; k < list.length; k++) list[k].classList.toggle("is-on", k === i);
     }
+    var prevTimer = 0;
     function setActive(i) {
       if (i === cur) return;
+      var was = cur;
       cur = i;
+      // keep the outgoing screenshot for its fade, then drop it from rendering (tall images are heavy on phones)
+      [laptopShots, phoneShots].forEach(function (list) {
+        for (var k = 0; k < list.length; k++) list[k].classList.toggle("is-prev", k === was);
+      });
+      clearTimeout(prevTimer);
+      prevTimer = setTimeout(function () {
+        [laptopShots, phoneShots].forEach(function (list) {
+          for (var k = 0; k < list.length; k++) list[k].classList.remove("is-prev");
+        });
+      }, 1100);
       mark(buttons, i); mark(details, i); mark(laptopShots, i); mark(phoneShots, i);
       num.textContent = String(i + 1).padStart(2, "0");
       stageWrap.style.setProperty("--site-glow", glows[i % glows.length]);

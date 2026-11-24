@@ -224,6 +224,13 @@
   background: radial-gradient(circle at 35% 35%, #2a3550, #07080c 60%); box-shadow: 0 0 0 2px #0b0b0d;
 }
 
+/* 3D scenes far from the viewport are not composited at all (saves GPU memory on phones) */
+.mb3d.is-far { visibility: hidden; }
+.mb3d.is-far .mb3d__css { display: none; }
+@media (max-width: 860px) {
+  .grain { display: none; }   /* full-screen animated noise is a constant repaint on phones */
+}
+
 /* Static fallback (reduced motion) */
 .seq--static { height: 100vh; height: 100svh; }
 .seq--static .seq__sticky { position: relative; }
@@ -318,7 +325,9 @@
 .device-laptop .stage { position: absolute; left: 0; top: 0; margin: 0; transform: rotateX(-14deg) rotateY(-16deg); }
 .device-laptop .lid { transform: translateY(-2px) rotateX(10deg); }
 .shots { position: absolute; inset: 0; overflow: hidden; background: #0b0b0e; }
-.shot { position: absolute; left: 0; top: 0; width: 100%; height: auto; opacity: 0; transition: opacity 1s var(--ease); will-change: transform, opacity; }
+/* only the current screenshot and the one fading out are rendered: tall images are costly on phones */
+.shot { position: absolute; left: 0; top: 0; width: 100%; height: auto; opacity: 0; transition: opacity 1s var(--ease); display: none; }
+.shot.is-on, .shot.is-prev { display: block; }
 .shot.is-on { opacity: 1; }
 
 .phone {

@@ -26,6 +26,15 @@ const DIM = {
 };
 const SCREEN_PX = { w: 1200, h: 767 };
 
+// the HDRI is downloaded once and shared by every scene on the page (a texture can feed several renderers)
+let hdriPromise = null;
+function loadHdri() {
+  if (!hdriPromise) hdriPromise = new Promise((resolve) => new RGBELoader().load(HDRI, resolve));
+  return hdriPromise;
+}
+// phones: keep GPU memory low — fewer pixels per 3D frame
+const MAX_DPR = window.innerWidth <= 860 ? 1.5 : 2;
+
 // MacBook Pro keyboard. Each key: [width in units, legend, style].
 // styles: c = centred letter, s = small label bottom-left, r = small label bottom-right, t = Touch ID, h = half-height arrow
 const ROWS = [
@@ -81,7 +90,7 @@ function roundRectPath(g, x, y, w, h, r) {
 
 export function createMacbook(host, screenEl, opts = {}) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, MAX_DPR));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.AgXToneMapping;
   renderer.toneMappingExposure = opts.exposure || 0.9;
@@ -97,9 +106,8 @@ export function createMacbook(host, screenEl, opts = {}) {
   const pmrem = new THREE.PMREMGenerator(renderer);
   // neutral studio first, the real HDRI replaces it once downloaded
   scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
-  new RGBELoader().load(HDRI, (hdr) => {
+  loadHdri().then((hdr) => {
     scene.environment = pmrem.fromEquirectangular(hdr).texture;
-    hdr.dispose();
     if (opts.onNeedsRender) opts.onNeedsRender();
   });
 
@@ -702,7 +710,7 @@ PH.SH = PH.SW * PHONE_PX.h / PHONE_PX.w;
 
 export function createIphone(host, screenEl, opts = {}) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, MAX_DPR));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.AgXToneMapping;
   renderer.toneMappingExposure = opts.exposure || 0.95;
@@ -716,9 +724,8 @@ export function createIphone(host, screenEl, opts = {}) {
   const cssScene = new THREE.Scene();
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
-  new RGBELoader().load(HDRI, (hdr) => {
+  loadHdri().then((hdr) => {
     scene.environment = pmrem.fromEquirectangular(hdr).texture;
-    hdr.dispose();
     if (opts.onNeedsRender) opts.onNeedsRender();
   });
   const camera = new THREE.PerspectiveCamera(opts.fov || 18, 1, 0.5, 2000);
