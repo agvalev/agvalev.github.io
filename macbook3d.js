@@ -810,7 +810,6 @@ export function createMacbook(host, screenEl, opts = {}) {
     camera.position.set(state.pos.x, state.pos.y, state.pos.z);
     target.set(state.look.x, state.look.y, state.look.z);
     camera.lookAt(target);
-    beamFollow();
     root.updateMatrixWorld(true);
     cssObj.matrix.copy(anchor.matrixWorld).multiply(scaleM);
     cssObj.matrixWorldNeedsUpdate = true;
@@ -819,62 +818,40 @@ export function createMacbook(host, screenEl, opts = {}) {
     css.render(cssScene, camera);
   }
 
-  // ----- materialising intro (Igloo-style): the laptop is first only glowing edges, then a scan
-  // line sweeps across it and leaves the real aluminium behind. t: 0 wireframe … 1 solid
+  // ----- intro reveal, like a product launch film: the laptop waits in the dark, a warm rim light
+  // draws its silhouette, a soft light glides across the aluminium and the studio slowly comes up.
+  // Everything happens in the lighting, so nothing is drawn outside the laptop itself.
+  // t: 0 dark … 1 fully lit
   let setMaterialize = () => {};
-  let beamFollow = () => {};
   if (opts.materialize) {
-    renderer.localClippingEnabled = true;
-    const solidPlane = new THREE.Plane(new THREE.Vector3(-1, 0, 0), 0);
-    const edgePlane = new THREE.Plane(new THREE.Vector3(1, 0, 0), 0);
-    const edgeMat = new THREE.LineBasicMaterial({
-      color: 0xe9c98c, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending,
-      depthWrite: false, clippingPlanes: [edgePlane], toneMapped: false
-    });
-    const meshes = [], edges = [];
-    root.traverse((o) => { if (o.isMesh) meshes.push(o); });
-    const mats = new Set();
-    meshes.forEach((m) => {
-      (Array.isArray(m.material) ? m.material : [m.material]).forEach((mt) => mats.add(mt));
-      if (m.geometry.type === "PlaneGeometry") return;   // decals and the shadow: no outline
-      const e = new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry, 28), edgeMat);
-      e.renderOrder = 2;
-      m.add(e);
-      edges.push(e);
-    });
-    mats.forEach((mt) => { mt.clippingPlanes = [solidPlane]; mt.needsUpdate = true; });
-    // a soft column of light that faces the camera: gaussian across, fading at the top and bottom
-    const beamTex = (sigma, core) => canvasTexture(128, 512, (g, w, h) => {
-      const img = g.createImageData(w, h);
-      for (let y = 0; y < h; y++) {
-        const vy = Math.pow(Math.sin(Math.PI * y / (h - 1)), 1.6);
-        for (let x = 0; x < w; x++) {
-          const u = (x - (w - 1) / 2) / (w / 2);
-          const a = (Math.exp(-(u * u) / (2 * sigma * sigma)) + core * Math.exp(-(u * u) / 0.0016)) * vy;
-          const i = (y * w + x) * 4;
-          img.data[i] = 255; img.data[i + 1] = 226; img.data[i + 2] = 178; img.data[i + 3] = Math.min(255, a * 255);
-        }
-      }
-      g.putImageData(img, 0, 0);
-    });
-    const beamMat = (tex) => new THREE.MeshBasicMaterial({ map: tex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, toneMapped: false, opacity: 0 });
-    const beam = new THREE.Mesh(new THREE.PlaneGeometry(7, 34), beamMat(beamTex(0.22, 0.35)));
-    const halo = new THREE.Mesh(new THREE.PlaneGeometry(30, 40), beamMat(beamTex(0.3, 0)));
-    [beam, halo].forEach((b) => { b.renderOrder = 5; scene.add(b); });
-    beamFollow = () => { beam.quaternion.copy(camera.quaternion); halo.quaternion.copy(camera.quaternion); };
     const ss = THREE.MathUtils.smoothstep;
+    const smoother = (x) => x * x * x * (x * (x * 6 - 15) + 10);
+    const lit = [];
+    root.traverse((o) => {
+      if (!o.isMesh) return;
+      (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => {
+        if ("envMapIntensity" in m && !lit.some((e) => e.m === m)) lit.push({ m, env: m.envMapIntensity });
+      });
+    });
+    const lights = [[rim, "rim"], [rim2, "rim"], [keyLight, "fill"], [softTop, "fill"], [softSide, "fill"]].map(([l, k]) => ({ l, k, i: l.intensity }));
+    // the gliding light: a tall softbox behind and above, so its reflection crosses the lid
+    const sweep = new THREE.RectAreaLight(0xfff0dc, 0, 5, 50);
+    scene.add(sweep);
     setMaterialize = (t) => {
-      // the light travels a little past both edges, so it fades in before and out after the laptop
-      const x = THREE.MathUtils.lerp(-W / 2 - 7, W / 2 + 7, ss(t, 0, 0.88));
-      solidPlane.constant = t >= 1 ? 1e4 : x;     // keep x <= sweep
-      edgePlane.constant = -x;                     // keep x >= sweep
-      edgeMat.opacity = 0.4 * (1 - ss(t, 0.5, 0.92));
-      const fade = ss(t, 0, 0.18) * (1 - ss(t, 0.62, 1));
-      beam.material.opacity = 0.75 * fade;
-      halo.material.opacity = 0.28 * fade;
-      beam.visible = halo.visible = t > 0.0005 && t < 0.9995;
-      beam.position.set(x, 8, 0); halo.position.set(x, 8, 0);
-      edges.forEach((e) => { e.visible = t < 1; });
+      const rimF = smoother(ss(t, 0.02, 0.42));
+      const fill = smoother(ss(t, 0.44, 1));
+      lights.forEach((e) => { e.l.intensity = e.i * (e.k === "rim" ? rimF : fill); });
+      lit.forEach((e) => { e.m.envMapIntensity = e.env * fill; });
+      const g = ss(t, 0.12, 0.74);
+      const x = THREE.MathUtils.lerp(-52, 52, smoother(g));
+      sweep.intensity = 14 * Math.pow(Math.sin(Math.PI * g), 1.5);
+      sweep.position.set(x, 30, -26);
+      sweep.lookAt(x * 0.25, 0, 2);
+      sweep.visible = g > 0 && g < 1;
+      // it settles into place while the light comes up
+      const settle = 1 - smoother(ss(t, 0, 1));
+      root.position.y = -1.4 * settle;
+      root.rotation.y = -0.14 * settle;
     };
     setMaterialize(0);
   }
